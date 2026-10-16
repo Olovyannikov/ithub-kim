@@ -43,13 +43,13 @@ ADR в `docs/adr/` с вариантами, решением и последст
 
 Не забегать вперёд: если решение относится к следующей части, оставить `TODO` со ссылкой
 на номер ADR, а не «на всякий случай» зафиксировать выбор. Так уже сделано с
-`ValidationPipe` в `apps/api/src/main.ts` (ждёт ADR-0005).
+`ValidationPipe` в `apps/backend/src/main.ts` (ждёт ADR-0005).
 
 ## Стек и структура
 
 ```
-apps/api        @kim/api     NestJS 12 + PostgreSQL
-apps/web        @kim/web     React 19 + Vite 8 + Effector 23 + Mantine 9
+apps/backend   @kim/backend   NestJS 12 + PostgreSQL
+apps/frontend  @kim/frontend  React 19 + Vite 8 + Effector 23 + Mantine 9
 packages/shared @kim/shared  домен, константы и правила валидации из текста ТЗ
 docs/adr/                    архитектурные решения
 docs/er/                     ER-диаграмма (требование задания)
@@ -60,7 +60,7 @@ TypeScript 6.0.x. **Не обновлять до 7.x**: NestJS опираетс�
 и `emitDecoratorMetadata`, совместимость нового компилятора не проверена (ADR-0001).
 
 `packages/shared` собирается в CommonJS, потому что его потребляют две разные среды:
-NestJS (CJS) и Vite (ESM с интеропом). Поэтому в `apps/web/vite.config.ts` стоит
+NestJS (CJS) и Vite (ESM с интеропом). Поэтому в `apps/frontend/vite.config.ts` стоит
 `optimizeDeps.include: ['@kim/shared']` — без этого dev-режим ломается.
 
 ## UI: Mantine
@@ -88,7 +88,7 @@ UI строится **только на Mantine**. Документация ве
 4. **Формы — `@mantine/form`.** Ошибки валидации выводятся на самой форме: это дословное
    требование Задания 2, п. 1–2. Правила берутся из `packages/shared/src/validation.ts`,
    а не пишутся заново в компоненте.
-5. **Тема — через `createTheme` в `apps/web/src/theme.ts`.** Цвета, шрифты и размеры
+5. **Тема — через `createTheme` в `apps/frontend/src/theme.ts`.** Цвета, шрифты и размеры
    берутся из руководства по стилю заказчика (`docs/design/`), а не подбираются на глаз:
    это критерий «соответствие корпоративному стилю заказчика», 11 баллов.
 6. **Точки разрыва — значения Mantine по умолчанию.** Менять их можно только в рамках
@@ -104,8 +104,8 @@ UI строится **только на Mantine**. Документация ве
 ```bash
 pnpm install          # зависимости + git-хуки (lefthook)
 pnpm dev              # shared в watch + api + web параллельно
-pnpm dev:api          # только NestJS   → http://localhost:3000/api
-pnpm dev:web          # только Vite     → http://localhost:5173
+pnpm dev:back         # только NestJS   → http://localhost:3000/api
+pnpm dev:front        # только Vite     → http://localhost:5173
 pnpm build            # сборка всех пакетов
 pnpm typecheck        # проверка типов во всех пакетах
 pnpm lint             # ESLint по репозиторию

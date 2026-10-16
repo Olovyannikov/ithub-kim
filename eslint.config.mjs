@@ -36,7 +36,7 @@ export default tseslint.config(
 
   // Бэкенд: NestJS
   {
-    files: ['apps/api/**/*.ts'],
+    files: ['apps/backend/**/*.ts'],
     languageOptions: {
       globals: globals.node,
     },
@@ -44,7 +44,7 @@ export default tseslint.config(
 
   // Фронтенд: React
   {
-    files: ['apps/web/**/*.{ts,tsx}'],
+    files: ['apps/frontend/**/*.{ts,tsx}'],
     languageOptions: {
       globals: globals.browser,
     },

@@ -34,7 +34,7 @@ export function App() {
 
             {error ? (
               <Alert color="red" title="Бэкенд недоступен">
-                {error}. Запустите API: <code>pnpm dev:api</code>
+                {error}. Запустите API: <code>pnpm dev:back</code>
               </Alert>
             ) : (
               <Text>

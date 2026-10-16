@@ -13,7 +13,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 OUT_DIR="docs/stack/mantine"
-VERSION="$(node -p "require('./apps/web/node_modules/@mantine/core/package.json').version")"
+VERSION="$(node -p "require('./apps/frontend/node_modules/@mantine/core/package.json').version")"
 TODAY="$(date +%F)"
 
 mkdir -p "$OUT_DIR"

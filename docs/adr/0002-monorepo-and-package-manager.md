@@ -59,8 +59,8 @@
 **Структура — Вариант A**, монорепозиторий:
 
 ```
-apps/api        @kim/api     NestJS + PostgreSQL
-apps/web        @kim/web     React + Effector + Mantine
+apps/backend   @kim/backend   NestJS + PostgreSQL
+apps/frontend  @kim/frontend  React + Effector + Mantine
 packages/shared @kim/shared  домен, константы, правила валидации
 ```
 

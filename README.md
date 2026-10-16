@@ -117,13 +117,13 @@
 ### Часть 0. Каркас репозитория и окружение — ✅ готово
 
 - [x] [ADR-0001](./docs/adr/0001-stack.md): стек и его обоснование под условия ДЭ
-- [x] [ADR-0002](./docs/adr/0002-monorepo-and-package-manager.md): структура монорепозитория (`apps/api`, `apps/web`, `packages/shared`), менеджер пакетов
+- [x] [ADR-0002](./docs/adr/0002-monorepo-and-package-manager.md): структура монорепозитория (`apps/backend`, `apps/frontend`, `packages/shared`), менеджер пакетов
 - [x] [ADR-0010](./docs/adr/0010-git-hooks-and-commit-convention.md): git-хуки (lefthook) и стандарт сообщений коммитов
 - [x] Монорепо на pnpm workspaces, TypeScript-конфиги, ESLint + Prettier (единый стандарт кодирования — критерий Задания 3)
 - [x] `docker-compose` с PostgreSQL, `.env.example`
 - [x] Скрипты: `dev`, `build`, `typecheck`, `lint`, `format`, `db:up`, `db:reset`
 - [x] Каркас `@kim/shared`: типы помещений, способы оплаты, статусы заявки и правила валидации — дословно из текста ТЗ
-- [x] Каркас `@kim/api` (NestJS) и `@kim/web` (Vite + React + Effector + Mantine), сквозная проверка связки
+- [x] Каркас `@kim/backend` (NestJS) и `@kim/frontend` (Vite + React + Effector + Mantine), сквозная проверка связки
 - [x] Инструкция по запуску с нуля (ниже) и [CLAUDE.md](./CLAUDE.md)
 
 Скрипты `test`, `db:migrate`, `db:seed` появятся вместе с ORM и тестами в Частях 1–2.
@@ -215,8 +215,8 @@
 
 ```
 apps/
-  api/            # @kim/api — NestJS 12 + PostgreSQL
-  web/            # @kim/web — React 19 + Vite 8 + Effector 23 + Mantine 9
+  backend/        # @kim/backend — NestJS 12 + PostgreSQL
+  frontend/       # @kim/frontend — React 19 + Vite 8 + Effector 23 + Mantine 9
 packages/
   shared/         # @kim/shared — домен, константы и правила валидации из текста ТЗ
 docs/

@@ -203,7 +203,7 @@ importers:
         specifier: ^8.71.2
         version: 8.71.2(eslint@10.12.0(jiti@2.6.1)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
 
-  apps/api:
+  apps/backend:
     dependencies:
       '@kim/shared':
         specifier: workspace:*
@@ -243,7 +243,7 @@ importers:
         specifier: ~6.0.3
         version: 6.0.3
 
-  apps/web:
+  apps/frontend:
     dependencies:
       '@kim/shared':
         specifier: workspace:*
