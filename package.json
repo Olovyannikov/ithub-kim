@@ -5,7 +5,7 @@
   "description": "Конференции.РФ — подготовка к демонстрационному экзамену по КИМ 09.02.07-3-2027",
   "packageManager": "pnpm@12.14.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "prepare": "lefthook install",

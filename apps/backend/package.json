@@ -6,7 +6,13 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:migrate": "pnpm run build && node node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
+    "db:migrate:revert": "pnpm run build && node node_modules/typeorm/cli.js migration:revert -d dist/database/data-source.js",
+    "db:migrate:generate": "bash scripts/generate-migration.sh",
+    "db:schema:log": "pnpm run build && node node_modules/typeorm/cli.js schema:log -d dist/database/data-source.js",
+    "db:seed": "pnpm run build && node dist/database/seed.js",
+    "db:migrations:format": "prettier --write src/database/migrations && eslint --fix src/database/migrations"
   },
   "dependencies": {
     "@kim/shared": "workspace:*",
@@ -14,14 +20,18 @@
     "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.1.3",
     "@nestjs/platform-express": "^12.1.3",
+    "@nestjs/typeorm": "^12.0.2",
+    "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "typeorm": "^1.1.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.8",
     "@nestjs/schematics": "^12.0.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
     "typescript": "~6.0.3"
   }
 }

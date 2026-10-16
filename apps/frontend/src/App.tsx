@@ -37,10 +37,21 @@ export function App() {
                 {error}. Запустите API: <code>pnpm dev:back</code>
               </Alert>
             ) : (
-              <Text>
-                Статус API:{' '}
-                <Badge color={health ? 'green' : 'gray'}>{health?.status ?? 'нет данных'}</Badge>
-              </Text>
+              <>
+                <Text>
+                  Статус API:{' '}
+                  <Badge color={health ? 'green' : 'gray'}>{health?.status ?? 'нет данных'}</Badge>
+                </Text>
+                <Text>
+                  База данных:{' '}
+                  <Badge color={health?.database === 'ok' ? 'green' : 'gray'}>
+                    {health?.database ?? 'нет данных'}
+                  </Badge>{' '}
+                  {health?.roomsInDatabase !== null && health?.roomsInDatabase !== undefined
+                    ? `помещений в справочнике: ${health.roomsInDatabase}`
+                    : null}
+                </Text>
+              </>
             )}
 
             <Button onClick={() => refresh()} loading={pending} variant="light" w="fit-content">

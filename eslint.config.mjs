@@ -40,6 +40,14 @@ export default tseslint.config(
     languageOptions: {
       globals: globals.node,
     },
+    rules: {
+      // NestJS внедряет зависимости по рантайм-метаданным типов
+      // (emitDecoratorMetadata). `import type` стирает импорт из вывода, и DI
+      // перестаёт находить класс — ошибка проявляется только при старте
+      // приложения. На экзаменационном таймере это худший вид отладки,
+      // поэтому правило здесь отключено осознанно.
+      '@typescript-eslint/consistent-type-imports': 'off',
+    },
   },
 
   // Фронтенд: React

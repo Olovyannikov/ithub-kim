@@ -10,6 +10,8 @@ import { createEffect, createStore, sample } from 'effector';
 
 export interface HealthResponse {
   status: string;
+  database: 'ok' | 'unavailable';
+  roomsInDatabase: number | null;
   roomKinds: readonly string[];
   applicationStatuses: readonly string[];
 }
