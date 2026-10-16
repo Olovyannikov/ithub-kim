@@ -1,0 +1,53 @@
+# Структура взята из Olovyannikov/FSD-example и урезана под текущее состояние
+# проекта: подключены только те проверки, инструменты для которых уже стоят.
+# Остальные группы добавляются по мере прохождения плана (см. README).
+#
+# ВАЖНО для экзамена: КИМ требует коммиты в начале и в конце каждого задания.
+# Если хук мешает уложиться в таймер — обходим его:
+#   LEFTHOOK=0 git commit -m "..."   или   git commit --no-verify -m "..."
+# Это осознанный аварийный выход, а не норма.
+
+# Группа проверок фронтенда и общего кода.
+frontend:
+  parallel: true
+  commands:
+    eslint:
+      glob: '*.{ts,tsx,js,jsx,mjs,cjs}'
+      run: pnpm exec eslint {staged_files}
+    prettier:
+      run: pnpm exec prettier --write --ignore-unknown {staged_files} && git add {staged_files}
+
+    # TODO (Часть 3, ADR-0006): проверка границ FSD
+    # fsd:
+    #   run: pnpm run lint:fsd
+
+    # TODO (Часть 5, ADR-0008): стили
+    # stylelint:
+    #   glob: '*.css'
+    #   run: pnpm run lint:css {staged_files}
+
+    # TODO (Часть 6): циклические зависимости
+    # circular:
+    #   run: pnpm run lint:circular
+
+pre-commit:
+  piped: true
+  commands:
+    frontend:
+      run: LEFTHOOK_QUIET=meta,success pnpm exec lefthook run frontend
+
+commit-msg:
+  parallel: true
+  commands:
+    lint-commit-msg:
+      run: pnpm exec commitlint --edit $1
+
+pre-push:
+  parallel: true
+  commands:
+    typecheck:
+      run: pnpm run typecheck
+
+    # TODO (Часть 2): модульные тесты на валидацию и права доступа
+    # unit-test:
+    #   run: pnpm run test:unit

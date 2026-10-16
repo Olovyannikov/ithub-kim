@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // В package.json нет "type": "module", поэтому NodeNext эмитит CommonJS.
+    // Это нужно, чтобы пакет потребляли две разные среды: NestJS (CJS)
+    // и Vite (ESM с интеропом). См. ADR-0002.
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts"]
+}

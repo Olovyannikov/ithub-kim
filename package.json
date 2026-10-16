@@ -1,0 +1,42 @@
+{
+  "name": "ithub-kim",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Конференции.РФ — подготовка к демонстрационному экзамену по КИМ 09.02.07-3-2027",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "prepare": "lefthook install",
+    "dev": "pnpm run shared:build && concurrently -n shared,api,web -c gray,blue,magenta \"pnpm run shared:dev\" \"pnpm run dev:api\" \"pnpm run dev:web\"",
+    "dev:api": "pnpm --filter @kim/api dev",
+    "dev:web": "pnpm --filter @kim/web dev",
+    "shared:build": "pnpm --filter @kim/shared build",
+    "shared:dev": "pnpm --filter @kim/shared dev",
+    "build": "pnpm run shared:build && pnpm --filter @kim/api build && pnpm --filter @kim/web build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:reset": "docker compose down -v && docker compose up -d"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "lefthook": "^2.2.2",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2"
+  }
+}

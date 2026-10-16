@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm по умолчанию блокирует postinstall-скрипты зависимостей.
+# Здесь — явный белый список пакетов, которым это разрешено.
+# В pnpm 11+ настройка называется allowBuilds (раньше — onlyBuiltDependencies).
+allowBuilds:
+  # Скачивает нативный бинарник git-хуков.
+  lefthook: true
