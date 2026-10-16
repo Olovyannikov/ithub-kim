@@ -3,6 +3,7 @@ import { Controller, Get } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { Public } from './common/decorators/public.decorator';
 import { RoomEntity } from './rooms/room.entity';
 
 interface HealthResponse {
@@ -18,6 +19,7 @@ interface HealthResponse {
  * что подключён общий пакет @kim/shared и что база данных доступна.
  * Будет заменён реальными модулями в Части 2.
  */
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(

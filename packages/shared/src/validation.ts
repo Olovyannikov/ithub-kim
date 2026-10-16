@@ -36,4 +36,29 @@ export const VALIDATION_MESSAGES = {
   phone: 'Телефон в формате 8(XXX)XXX-XX-XX',
   email: 'Некорректный адрес электронной почты',
   credentials: 'Неверный логин или пароль',
+
+  // Правила, которые проверяются только на сервере (ADR-0005).
+  unauthorized: 'Необходимо войти в систему',
+  forbidden: 'Недостаточно прав для этого действия',
+  roomNotFound: 'Выбранное помещение не найдено',
+  roomRequired: 'Выберите помещение',
+  startsAtRequired: 'Укажите дату и время начала конференции',
+  startsAtInvalid: 'Некорректная дата начала конференции',
+  startsAtPast: 'Дата начала конференции не может быть в прошлом',
+  paymentMethodRequired: 'Выберите способ оплаты',
+  statusRequired: 'Выберите новый статус заявки',
+  statusNotAssignable: 'Этот статус нельзя выставить вручную',
+  applicationNotFound: 'Заявка не найдена',
+  reviewNotAllowed: 'Отзыв можно оставить только после завершения мероприятия',
+  reviewAlreadyExists: 'Отзыв об этом мероприятии уже оставлен',
+  reviewTextRequired: 'Напишите текст отзыва',
+  ratingInvalid: 'Оценка — целое число от 1 до 5',
+  validationFailed: 'Проверьте правильность заполнения полей',
+  unexpectedField: 'Недопустимое поле в запросе',
+  tooManyRequests: 'Слишком много попыток, попробуйте позже',
+  serverError: 'Внутренняя ошибка сервера',
 } as const;
+
+/** Границы оценки в отзыве. */
+export const RATING_MIN = 1;
+export const RATING_MAX = 5;

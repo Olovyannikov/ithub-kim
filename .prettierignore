@@ -7,3 +7,7 @@ pnpm-lock.yaml
 # Вендорённая документация — хранится дословно, как её отдаёт источник.
 # Форматирование ломало бы сверку с результатом `pnpm mantine:docs`.
 docs/stack/mantine
+
+# Сгенерированный контракт API — хранится как есть, см. docs/api/README.md
+docs/api/openapi.json
+dist-test

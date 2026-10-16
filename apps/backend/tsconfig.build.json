@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  // Тесты не попадают в production-сборку: их компилирует tsconfig.test.json.
+  "exclude": ["node_modules", "dist", "dist-test", "src/**/*.test.ts"]
+}

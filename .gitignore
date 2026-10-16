@@ -11,3 +11,6 @@ coverage/
 
 # Полный офлайн-справочник Mantine (~4.6 МБ), тянется через pnpm mantine:docs:full
 docs/stack/mantine/llms-full.txt
+
+# Сборка тестов (node --test по скомпилированному JS)
+dist-test/

@@ -147,6 +147,8 @@ pnpm --filter @kim/backend db:migrate            # применить мигра
 pnpm --filter @kim/backend db:migrate:generate src/database/migrations/Name
 pnpm --filter @kim/backend db:seed               # справочник помещений
 pnpm --filter @kim/backend db:schema:log         # база совпадает с кодом?
+pnpm --filter @kim/backend api:spec              # выгрузить контракт API
+pnpm test                                        # тесты (node --test по dist-test)
 ```
 
 **Docker не обязателен** — его нет в перечне ПО из КИМ. Как поднять PostgreSQL локально
@@ -185,6 +187,8 @@ LEFTHOOK=0 git commit -m "..."
 - Не менять схему базы напрямую и не включать `synchronize`: только миграции. Включённый
   `synchronize: true` — документированный аварийный путь для экзамена (ADR-0003), а не
   режим разработки.
+- Не писать регулярные выражения и тексты ошибок в DTO и компонентах: только импорт из
+  `@kim/shared`. Это проверяемое глазами условие на ревью (ADR-0005).
 - Не добавлять `UNIQUE` и прочие ограничения, которых нет в ТЗ: на проверке они дают
   отказ там, где заказчик его не просил. Email, например, намеренно не уникален.
 - Не принимать архитектурные решения без ADR и не делать части плана вне очереди.
