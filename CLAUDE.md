@@ -122,6 +122,12 @@ apps/frontend/src/
    Токен в httpOnly-cookie, читать его из JS нельзя по замыслу.
 7. **Не зеркалить состояние Effector в состояние React** через `useEffect` + `setState`.
    Если нужно производное значение — считать его в модели (как `$serverErrors`).
+8. **Приложение работает в Scope** (`fork` + `Provider`, см. `app/scope.ts`). Поэтому
+   императивный запуск юнита — только `allSettled(unit, { scope, params })`, а в
+   компонентах — только `useUnit`. Прямой вызов обновит глобальное состояние, а не то,
+   которое видит интерфейс. За этим следит конфигурация `scope` в `eslint-plugin-effector`.
+9. В тестах — `createWatch({ unit, scope, fn })`, а не `.watch`: подписка должна быть
+   привязана к scope.
 
 Роутер — **`@effector/router`**, не `atomic-router`: второе — прежнее имя библиотеки,
 в npm по запросу «effector router» находится именно оно, и API там другой. Офлайн-копия
@@ -189,7 +195,14 @@ pnpm --filter @kim/backend db:schema:log         # база совпадает �
 pnpm --filter @kim/backend api:spec              # выгрузить контракт API
 pnpm test                                        # тесты (node --test по dist-test)
 pnpm router:docs                                 # офлайн-документация роутера
+pnpm e2e                                         # сквозные проверки в браузере
 ```
+
+`pnpm e2e` — свой драйвер Chrome через DevTools Protocol (`scripts/browser.mjs`), без
+Playwright: тот тянет сборки браузеров на сотни мегабайт, а их пришлось бы класть в
+офлайн-хранилище. Требует поднятого стека. Именно эти проверки находят то, что не видят
+ни модульные тесты, ни запросы к API: формы, переходы и защиту маршрутов. Размер окна —
+`E2E_WIDTH` и `E2E_HEIGHT`.
 
 **Docker не обязателен** — его нет в перечне ПО из КИМ. Как поднять PostgreSQL локально
 без контейнера и как перейти на MySQL: [docs/db-setup.md](./docs/db-setup.md).

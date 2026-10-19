@@ -1,4 +1,3 @@
-import { ADMIN_LOGIN } from '@kim/shared';
 import { AppShell, Badge, Burger, Button, Container, Group, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useUnit } from 'effector-react';
@@ -62,7 +61,13 @@ export function Layout({ children }: { children: ReactNode }) {
                   <Text size="sm" c="dimmed" maw={220} truncate>
                     {user?.fullName}
                   </Text>
-                  {isAdmin ? <Badge color="navy">{ADMIN_LOGIN}</Badge> : null}
+                  {/*
+                    Здесь подпись роли, а не логин: Badge в Mantine по
+                    умолчанию приводит текст к верхнему регистру, а логины у
+                    нас регистрозависимы — `Conf2027` отрисовался бы как
+                    `CONF2027` и перестал соответствовать ТЗ.
+                  */}
+                  {isAdmin ? <Badge color="navy">Администратор</Badge> : null}
                   <Button variant="light" onClick={() => logout()}>
                     Выйти
                   </Button>

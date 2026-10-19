@@ -81,9 +81,9 @@ export default tseslint.config(
    * Для нас это страховка под таймером: такие ошибки в день экзамена искать
    * дороже всего (ADR-0006).
    *
-   * Конфиг `scope` не включаем: `fork`/`Provider` используются только в
-   * тестах, а в приложении Scope не применяется — иначе правила требовали бы
-   * передавать scope там, где его нет.
+   * Конфигурация `scope` включена: приложение работает в изолированном Scope
+   * (`app/scope.ts`), поэтому прямые вызовы юнитов вне `useUnit`/`allSettled`
+   * обновляли бы глобальное состояние, а не то, что видит интерфейс.
    */
   {
     files: ['apps/frontend/**/*.{ts,tsx}'],
@@ -106,12 +106,28 @@ export default tseslint.config(
     files: ['apps/frontend/**/*.{ts,tsx}'],
     ...effector.flatConfigs.patronum,
   },
+  {
+    files: ['apps/frontend/**/*.{ts,tsx}'],
+    ...effector.flatConfigs.scope,
+  },
 
   // Конфиги сборки
   {
     files: ['**/*.config.{js,mjs,cjs,ts}', '**/postcss.config.cjs'],
     languageOptions: {
       globals: globals.node,
+    },
+  },
+
+  // Служебные скрипты: Node + веб-API, которые в нём есть начиная с 22-й версии
+  // (fetch, WebSocket). Вывод в консоль здесь — это и есть интерфейс скрипта.
+  {
+    files: ['scripts/**/*.{js,mjs,cjs}', '**/scripts/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.nodeBuiltin, WebSocket: 'readonly' },
+    },
+    rules: {
+      'no-console': 'off',
     },
   },
 

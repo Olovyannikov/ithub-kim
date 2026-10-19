@@ -1,21 +1,22 @@
-import { historyAdapter } from '@effector/router';
 import { combine, createEvent, sample } from 'effector';
-import { createBrowserHistory } from 'history';
 
 import {
   $isAdmin,
   $isAuthenticated,
   $sessionChecked,
   fetchSessionFx,
+  loginFx,
   logoutFx,
+  registerFx,
   sessionCheckRequested,
 } from '../entities/session';
 import { sessionExpired } from '../shared/api';
-import { router, routes } from '../shared/routes';
+import { routes } from '../shared/routes';
 
 /**
  * Запуск приложения — явное событие (ADR-0006), а не побочный эффект
- * монтирования компонента.
+ * монтирования компонента. Запускается через `allSettled` в `app/scope.ts`,
+ * чтобы вся логика выполнялась внутри Scope.
  */
 export const appStarted = createEvent();
 
@@ -80,6 +81,20 @@ sample({
   target: routes.applications.open,
 });
 
+/**
+ * После успешного входа или регистрации — на свои заявки.
+ *
+ * Отдельным переходом, а не через проверку «гость на странице входа»: раньше
+ * этого перехода не было, и пользователь после успешного входа оставался на
+ * форме. Нашлось сквозной проверкой в браузере — ни запросы curl, ни модульные
+ * тесты такого не видят.
+ */
+sample({
+  clock: [loginFx.doneData, registerFx.doneData],
+  fn: (): void => undefined,
+  target: routes.applications.open,
+});
+
 /** Корень — это список заявок, отдельной страницы у него нет. */
 sample({
   clock: routes.home.opened,
@@ -101,10 +116,3 @@ sample({
   fn: (): void => undefined,
   target: routes.login.open,
 });
-
-export function startApp(): void {
-  router.setHistory(historyAdapter(createBrowserHistory()));
-  appStarted();
-}
-
-export { router, routes };

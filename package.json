@@ -17,6 +17,7 @@
     "build": "pnpm run shared:build && pnpm --filter @kim/backend build && pnpm --filter @kim/frontend build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "e2e": "node scripts/e2e.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

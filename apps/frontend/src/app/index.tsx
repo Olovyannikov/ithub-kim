@@ -1,27 +1,27 @@
 import { MantineProvider } from '@mantine/core';
-import { useEffect } from 'react';
+import { Provider } from 'effector-react';
+import type { Scope } from 'effector';
 
 import { cssVariablesResolver, theme } from '../shared/theme';
-import { startApp } from './bootstrap';
 import { AppRouter } from './router';
 
 import '@mantine/core/styles.css';
 import '../shared/theme/fonts.css';
 
-export function App() {
-  useEffect(() => {
-    // Единственная точка входа в логику приложения: инициализация роутера и
-    // проверка сессии (ADR-0006).
-    startApp();
-  }, []);
-
+/**
+ * Провайдеры приложения. Scope создаётся до рендера (см. `app/scope.ts`),
+ * поэтому компонент не занимается запуском логики.
+ */
+export function App({ scope }: { scope: Scope }) {
   return (
-    <MantineProvider
-      theme={theme}
-      cssVariablesResolver={cssVariablesResolver}
-      defaultColorScheme="light"
-    >
-      <AppRouter />
-    </MantineProvider>
+    <Provider value={scope}>
+      <MantineProvider
+        theme={theme}
+        cssVariablesResolver={cssVariablesResolver}
+        defaultColorScheme="light"
+      >
+        <AppRouter />
+      </MantineProvider>
+    </Provider>
   );
 }
