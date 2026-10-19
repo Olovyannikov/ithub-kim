@@ -4,26 +4,16 @@ import {
   createRoutesView,
   RouterProvider,
 } from '@effector/router-react';
-import { Card, Center, Loader, Stack, Text, Title } from '@mantine/core';
+import { Center, Loader } from '@mantine/core';
 
 import { loadAdminPage } from '../pages/admin';
 import { loadApplicationCreatePage } from '../pages/application-create';
 import { loadApplicationsPage } from '../pages/applications';
 import { LoginPage } from '../pages/login';
+import { NotFoundPage } from '../pages/not-found';
 import { RegisterPage } from '../pages/register';
 import { router, routes } from '../shared/routes';
 import { Layout } from './layout';
-
-function NotFoundPage() {
-  return (
-    <Card withBorder padding="xl" bg="white">
-      <Stack gap="sm">
-        <Title order={2}>Страница не найдена</Title>
-        <Text c="dimmed">Проверьте адрес или вернитесь к своим заявкам.</Text>
-      </Stack>
-    </Card>
-  );
-}
 
 /** Пока подгружается код страницы, показываем тот же загрузчик, что и при загрузке данных. */
 function RouteFallback() {

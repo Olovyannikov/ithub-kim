@@ -4,6 +4,7 @@ import { Provider } from 'effector-react';
 import type { Scope } from 'effector';
 
 import { cssVariablesResolver, theme } from '../shared/theme';
+import { ErrorBoundary } from './error-boundary';
 import { AppRouter } from './router';
 
 import '@mantine/core/styles.css';
@@ -30,7 +31,10 @@ export function App({ scope }: { scope: Scope }) {
           понедельника, как принято у пользователя.
         */}
         <DatesProvider settings={{ locale: 'ru', firstDayOfWeek: 1, weekendDays: [0, 6] }}>
-          <AppRouter />
+          {/* Граница ошибок внутри провайдеров: экран 500 оформлен темой заказчика. */}
+          <ErrorBoundary>
+            <AppRouter />
+          </ErrorBoundary>
         </DatesProvider>
       </MantineProvider>
     </Provider>
