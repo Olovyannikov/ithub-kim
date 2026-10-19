@@ -611,6 +611,18 @@ export async function openPage(browser) {
       })()`);
     },
 
+    /** Кнопка «назад» браузера. */
+    async goBack() {
+      await this.evaluate('history.back()');
+      await sleep(700);
+    },
+
+    /** Кнопка «вперёд» браузера. */
+    async goForward() {
+      await this.evaluate('history.forward()');
+      await sleep(700);
+    },
+
     async waitForText(needle, timeoutMs = 10_000) {
       const deadline = Date.now() + timeoutMs;
 

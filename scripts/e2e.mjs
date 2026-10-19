@@ -242,6 +242,37 @@ check('полный сценарий: регистрация, заявка, см
   );
 });
 
+check('кнопки «назад» и «вперёд» браузера переключают страницы', async (page) => {
+  /*
+    Проверка появилась после настоящего отказа. Адаптер истории отдавал роутеру
+    перехват нативных переходов, и тот зацикливался: `pop → go(1) → retry →
+    go(-1) → pop` без конца. Адрес метался между двумя страницами, а экран не
+    менялся вовсе. Ни один из прежних сценариев этого не ловил — все они ходили
+    только по ссылкам.
+  */
+  // Проверки идут по одной странице подряд, поэтому начинаем с чистого листа.
+  await logout(page);
+  await page.goto(`${BASE}/login`);
+  await page.fillByLabel('Логин', ADMIN.login);
+  await page.fillByLabel('Пароль', ADMIN.password);
+  await page.clickByText('Войти');
+  await page.waitForText('Мои заявки');
+
+  await page.clickByText('Новая заявка');
+  assert.equal(await page.url(), '/applications/new');
+
+  await page.goBack();
+  assert.equal(await page.url(), '/applications', 'после «назад» ожидался список заявок');
+  assert.ok(
+    (await page.text()).includes('Мои заявки'),
+    'после «назад» на экране должна быть страница, которой соответствует адрес',
+  );
+
+  await page.goForward();
+  assert.equal(await page.url(), '/applications/new', 'после «вперёд» ожидалась форма заявки');
+  assert.ok(await page.waitForText('Выберите помещение'), 'форма заявки должна отрисоваться');
+});
+
 check('мобильный макет 390x844: меню сворачивается и работает', async (page) => {
   await logout(page);
   // Размер из Задания 2. Через размер окна его не добиться — окно Chrome не
