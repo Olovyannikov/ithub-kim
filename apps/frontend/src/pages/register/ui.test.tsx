@@ -30,7 +30,9 @@ describe('Страница регистрации', () => {
     await user.type(screen.getByLabelText(/Логин/), 'ab');
     await user.type(screen.getByLabelText(/Пароль/), '123');
     await user.type(screen.getByLabelText(/ФИО/), 'Ivanov Ivan');
-    await user.type(screen.getByLabelText(/Телефон/), '89991234567');
+    // Поле под маской: буквы и «+7» оно не пропустит, поэтому проверяем
+    // реальный случай — недописанный номер.
+    await user.type(screen.getByLabelText(/Телефон/), '8999');
     await user.type(screen.getByLabelText(/Электронная почта/), 'не-почта');
     await user.click(screen.getByRole('button', { name: /Создать пользователя/ }));
 

@@ -5,7 +5,7 @@ import { createEvent, createStore, sample } from 'effector';
 import { RoomsModel } from '../../entities/room';
 import { applicationsApi } from '../../shared/api';
 import { NO_SERVER_ERRORS, parseServerError } from '../../shared/forms';
-import { toDateTimeLocalValue } from '../../shared/lib';
+import { pickerValueToIso, toPickerValue } from '../../shared/lib';
 import { createModel } from '../../shared/lib/effector';
 import { routes } from '../../shared/routes';
 
@@ -15,7 +15,7 @@ import { routes } from '../../shared/routes';
  */
 export interface CreateValues {
   roomId: string | null;
-  startsAt: string;
+  startsAt: string | null;
   paymentMethod: PaymentMethod | null;
 }
 
@@ -49,21 +49,23 @@ export const ApplicationCreatePageModel = createModel(() => {
    * страницы: вычислять «сейчас» в разметке нельзя — это правило из ТЗ
    * («дата не в прошлом»), и на сервере проверяется то же самое.
    */
-  const $minStartsAt = createStore(toDateTimeLocalValue(new Date()));
+  const $minStartsAt = createStore(toPickerValue(new Date()));
 
   sample({
     clock: routes.applicationCreate.opened,
-    fn: () => toDateTimeLocalValue(new Date()),
+    fn: () => toPickerValue(new Date()),
     target: $minStartsAt,
   });
 
   sample({
     clock: formSubmitted,
-    // Форма отдаёт строки — поле Select работает со строковыми значениями,
-    // а дата приходит из `datetime-local` без часового пояса.
+    // Форма отдаёт строки: Select работает со строковыми значениями, а
+    // DateTimePicker — со строкой `YYYY-MM-DD HH:mm:ss` в местном времени.
+    // Приведения нужны потому, что сюда попадают только значения, прошедшие
+    // валидацию формы, а типы об этом не знают.
     fn: (values) => ({
       roomId: Number(values.roomId),
-      startsAt: new Date(values.startsAt).toISOString(),
+      startsAt: pickerValueToIso(values.startsAt as string),
       paymentMethod: values.paymentMethod as PaymentMethod,
     }),
     target: createApplicationMutation.start,

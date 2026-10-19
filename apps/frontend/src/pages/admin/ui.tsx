@@ -13,7 +13,8 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { IconFilterOff, IconSearch } from '@tabler/icons-react';
+import { DateTimePicker } from '@mantine/dates';
+import { IconCalendarEvent, IconFilterOff, IconSearch } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
 import { match } from 'ts-pattern';
 
@@ -86,20 +87,43 @@ export function AdminPage() {
                 }
               />
             </Grid.Col>
+            {/*
+              Границы диапазона — тот же календарь Mantine, что и на форме
+              заявки: нативный `datetime-local` выглядел чужеродно и в каждом
+              браузере по-своему.
+            */}
             <Grid.Col span={{ base: 12, sm: 6 }}>
-              <TextInput
-                type="datetime-local"
+              <DateTimePicker
                 label="Начало конференции: с"
-                value={filters.from}
-                onChange={(event) => changeFilters({ ...filters, from: event.currentTarget.value })}
+                placeholder="Любая дата"
+                maxDate={filters.to || undefined}
+                valueFormat="D MMMM YYYY, HH:mm"
+                // Кнопки календаря Mantine по умолчанию без подписи — для
+                // скринридера это «кнопка» без смысла. Подписываем.
+                nextLabel="Следующий месяц"
+                previousLabel="Предыдущий месяц"
+                submitButtonProps={{ 'aria-label': 'Подтвердить дату и время' }}
+                leftSection={<IconCalendarEvent size={18} stroke={1.8} />}
+                clearable
+                value={filters.from || null}
+                onChange={(value) => changeFilters({ ...filters, from: value ?? '' })}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 6 }}>
-              <TextInput
-                type="datetime-local"
+              <DateTimePicker
                 label="по"
-                value={filters.to}
-                onChange={(event) => changeFilters({ ...filters, to: event.currentTarget.value })}
+                placeholder="Любая дата"
+                minDate={filters.from || undefined}
+                valueFormat="D MMMM YYYY, HH:mm"
+                // Кнопки календаря Mantine по умолчанию без подписи — для
+                // скринридера это «кнопка» без смысла. Подписываем.
+                nextLabel="Следующий месяц"
+                previousLabel="Предыдущий месяц"
+                submitButtonProps={{ 'aria-label': 'Подтвердить дату и время' }}
+                leftSection={<IconCalendarEvent size={18} stroke={1.8} />}
+                clearable
+                value={filters.to || null}
+                onChange={(value) => changeFilters({ ...filters, to: value ?? '' })}
               />
             </Grid.Col>
           </Grid>

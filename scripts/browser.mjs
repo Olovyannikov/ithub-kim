@@ -493,6 +493,99 @@ export async function openPage(browser) {
     },
 
     /**
+     * Выбирает дату и время в календаре Mantine.
+     *
+     * Раньше поле было нативным `datetime-local`, и значение просто
+     * записывалось в input. `DateTimePicker` — это кнопка с выпадающим
+     * календарём, значение ей не присвоить: нужно открыть, долистать до
+     * нужного месяца, щёлкнуть по дню и подтвердить. Время подставляется
+     * из `defaultTimeValue`.
+     */
+    async pickDateByLabel(label, date) {
+      const MONTHS = [
+        'января',
+        'февраля',
+        'марта',
+        'апреля',
+        'мая',
+        'июня',
+        'июля',
+        'августа',
+        'сентября',
+        'октября',
+        'ноября',
+        'декабря',
+      ];
+      // Так подписывает дни сам Mantine: dayjs формата «D MMMM YYYY» с русской локалью.
+      const dayLabel = `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+
+      await this.waitUntil(`Array.from(document.querySelectorAll('label')).some(
+        (l) => l.textContent.replace(/\\s*\\*$/, '').trim() === ${JSON.stringify(label)},
+      )`);
+
+      const opened = await this.evaluate(`(() => {
+        const labels = Array.from(document.querySelectorAll('label'));
+        const target = labels.find((l) => l.textContent.replace(/\\s*\\*$/, '').trim() === ${JSON.stringify(label)});
+        if (!target) return false;
+        const id = target.getAttribute('for');
+        const control = id ? document.getElementById(id) : null;
+        if (!control) return false;
+        control.click();
+        return true;
+      })()`);
+
+      if (!opened) {
+        throw new Error(`Не найдено поле даты с подписью «${label}»`);
+      }
+
+      await sleep(400);
+
+      // Календарь открывается на текущем месяце — листаем вперёд, пока не
+      // покажется нужный день. Двенадцати шагов хватает на год вперёд.
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        const found = await this.evaluate(`(() => {
+          const day = document.querySelector('[aria-label=' + JSON.stringify(${JSON.stringify('')} + ${JSON.stringify(dayLabel)}) + ']');
+          if (!day || day.hasAttribute('data-disabled')) return false;
+          day.click();
+          return true;
+        })()`);
+
+        if (found) {
+          await sleep(300);
+
+          const submitted = await this.evaluate(`(() => {
+            const button = document.querySelector('[aria-label="Подтвердить дату и время"]');
+            if (!button) return false;
+            button.click();
+            return true;
+          })()`);
+
+          if (!submitted) {
+            throw new Error('Не найдена кнопка подтверждения даты');
+          }
+
+          await sleep(400);
+          return;
+        }
+
+        const moved = await this.evaluate(`(() => {
+          const next = document.querySelector('[aria-label="Следующий месяц"]');
+          if (!next || next.disabled) return false;
+          next.click();
+          return true;
+        })()`);
+
+        if (!moved) {
+          break;
+        }
+
+        await sleep(250);
+      }
+
+      throw new Error(`В календаре не нашлось дня «${dayLabel}»`);
+    },
+
+    /**
      * Виден ли элемент с таким текстом **в пределах экрана**.
      *
      * Проверять по innerText нельзя: свёрнутая панель Mantine остаётся в DOM

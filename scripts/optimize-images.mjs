@@ -32,6 +32,12 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = join(ROOT, 'assets', 'source', 'rooms');
 const TARGET = join(ROOT, 'apps', 'frontend', 'public', 'rooms');
 
+const SOCIAL_SOURCE = join(ROOT, 'assets', 'source', 'social', 'social.png');
+const SOCIAL_TARGET = join(ROOT, 'apps', 'frontend', 'public', 'social');
+
+/** Сторона значка соцсети: 28 px в подвале на экране с удвоенной плотностью. */
+const SOCIAL_SIZE = 96;
+
 const WIDTHS = [480, 960];
 const ASPECT = 3 / 2;
 
@@ -111,4 +117,83 @@ async function main() {
   );
 }
 
+/**
+ * Находит границы содержимого: прямоугольник, за которым только фон.
+ *
+ * Фоном считается и прозрачное, и почти белое — исходник значков соцсетей
+ * нарисован на непрозрачной белой подложке, и без этого вокруг значка в
+ * подвале оставалось белое поле на сером фоне страницы.
+ */
+function contentBounds(data, { width, height, channels }, from = 0, to = width) {
+  let minX = to;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = from; x < to; x += 1) {
+      const i = (y * width + x) * channels;
+      const alpha = channels === 4 ? data[i + 3] : 255;
+
+      if (alpha < 10) {
+        continue;
+      }
+
+      const isWhite = data[i] > 245 && data[i + 1] > 245 && data[i + 2] > 245;
+
+      if (isWhite) {
+        continue;
+      }
+
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+
+  return { left: minX, top: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+}
+
+/**
+ * Режет значки соцсетей из одной картинки приложения к заданию.
+ *
+ * В исходнике два значка стоят рядом на белом фоне. Раньше их вырезали
+ * вручную с запасом, и запас этот был виден: светлая рамка вокруг каждого
+ * значка на сером фоне подвала. Теперь границы считаются по содержимому.
+ */
+async function social() {
+  const { data, info } = await sharp(SOCIAL_SOURCE).ensureAlpha().raw().toBuffer({
+    resolveWithObject: true,
+  });
+
+  // Значки стоят рядом, поэтому ищем каждый в своей половине исходника.
+  const half = Math.floor(info.width / 2);
+  const icons = [
+    { name: 'vk', bounds: contentBounds(data, info, 0, half) },
+    { name: 'ok', bounds: contentBounds(data, info, half, info.width) },
+  ];
+
+  await mkdir(SOCIAL_TARGET, { recursive: true });
+
+  for (const { name, bounds } of icons) {
+    const buffer = await sharp(SOCIAL_SOURCE)
+      .extract(bounds)
+      .resize(SOCIAL_SIZE, SOCIAL_SIZE, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .webp({ quality: 90, effort: 6 })
+      .toBuffer();
+
+    await writeFile(join(SOCIAL_TARGET, `${name}.webp`), buffer);
+
+    console.log(
+      `  ${name.padEnd(12)} вырезано ${bounds.width}x${bounds.height} из исходника → ` +
+        `${SOCIAL_SIZE}px webp, ${kb(buffer.length)} КБ`,
+    );
+  }
+}
+
 await main();
+await social();

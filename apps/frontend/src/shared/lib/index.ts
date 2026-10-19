@@ -1,2 +1,2 @@
-export { formatDate, formatDateTime, plural, toDateTimeLocalValue } from './format';
+export { formatDate, formatDateTime, pickerValueToIso, plural, toPickerValue } from './format';
 export { toListViewState, type ListViewState } from './view-state';

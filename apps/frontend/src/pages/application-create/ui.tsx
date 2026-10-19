@@ -1,4 +1,5 @@
-import { Alert, Button, Card, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Button, Card, Group, Select, Stack, Text, Title } from '@mantine/core';
+import { DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { IconBuilding, IconCalendarEvent, IconCreditCard, IconSend } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
@@ -19,7 +20,7 @@ export function ApplicationCreatePage() {
   } = useUnit(ApplicationCreatePageModel.viewModel);
 
   const form = useForm<CreateValues>({
-    initialValues: { roomId: null, startsAt: '', paymentMethod: null },
+    initialValues: { roomId: null, startsAt: null, paymentMethod: null },
     validate: {
       roomId: validators.room,
       startsAt: validators.startsAt,
@@ -66,12 +67,28 @@ export function ApplicationCreatePage() {
             error={form.errors.roomId ?? serverErrors.fields.roomId}
           />
 
-          <TextInput
-            type="datetime-local"
+          {/*
+            Календарь Mantine вместо браузерного `datetime-local`: нативный
+            выглядит по-разному в каждом браузере и не подчиняется теме
+            заказчика. Здесь же — русские месяцы, неделя с понедельника и
+            оформление, общее с остальными полями.
+          */}
+          <DateTimePicker
             label="Начало конференции"
-            min={minStartsAt}
+            placeholder="Выберите дату и время"
+            minDate={minStartsAt}
+            // Заявку подают на рабочее время, поэтому при выборе дня
+            // подставляется десять утра, а не полночь.
+            defaultTimeValue="10:00"
+            valueFormat="D MMMM YYYY, HH:mm"
+            // Кнопки календаря Mantine по умолчанию без подписи — для
+            // скринридера это «кнопка» без смысла. Подписываем.
+            nextLabel="Следующий месяц"
+            previousLabel="Предыдущий месяц"
+            submitButtonProps={{ 'aria-label': 'Подтвердить дату и время' }}
             leftSection={<IconCalendarEvent size={18} stroke={1.8} />}
             withAsterisk
+            clearable
             {...form.getInputProps('startsAt')}
             error={form.errors.startsAt ?? serverErrors.fields.startsAt}
           />

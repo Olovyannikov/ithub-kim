@@ -25,23 +25,29 @@ export function formatDate(iso: string): string {
 }
 
 /**
- * Значение для поля `<input type="datetime-local">`: локальное время без
- * часового пояса, с точностью до минут.
+ * Значение для полей `@mantine/dates`.
+ *
+ * Mantine 9 работает с датами как со строками `YYYY-MM-DD HH:mm:ss` в местном
+ * времени — не с `Date` и не с ISO. Формат без часового пояса здесь уместен:
+ * пользователь выбирает время конференции по своим часам, а не по UTC.
  */
-export function toDateTimeLocalValue(date: Date): string {
+export function toPickerValue(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0');
 
-  return [
-    date.getFullYear(),
-    '-',
-    pad(date.getMonth() + 1),
-    '-',
-    pad(date.getDate()),
-    'T',
-    pad(date.getHours()),
-    ':',
-    pad(date.getMinutes()),
-  ].join('');
+  const day = [date.getFullYear(), pad(date.getMonth() + 1), pad(date.getDate())].join('-');
+  const time = [pad(date.getHours()), pad(date.getMinutes()), '00'].join(':');
+
+  return `${day} ${time}`;
+}
+
+/**
+ * Обратное преобразование: из строки пикера в ISO для отправки на сервер.
+ *
+ * `new Date('2026-11-18 10:00:00')` разбирается как местное время — это ровно
+ * то, что выбрал пользователь, — и `toISOString` переводит его в UTC.
+ */
+export function pickerValueToIso(value: string): string {
+  return new Date(value).toISOString();
 }
 
 /** Склонение существительного по числу: 1 заявка, 2 заявки, 5 заявок. */

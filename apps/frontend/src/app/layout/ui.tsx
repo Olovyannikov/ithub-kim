@@ -11,6 +11,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
+import type { Route } from '@effector/router';
 import { useDisclosure } from '@mantine/hooks';
 import { IconCalendarPlus, IconListDetails, IconLogout, IconShieldCog } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
@@ -18,12 +19,68 @@ import type { PropsWithChildren } from 'react';
 
 import { SessionModel } from '../../entities/session';
 import { routes } from '../../shared/routes';
-import { Logo } from '../../shared/ui';
+import { Logo, RouteLink } from '../../shared/ui';
 
 const SOCIAL = [
   { name: 'ВКонтакте', icon: '/social/vk.webp', href: 'https://vk.com' },
   { name: 'Одноклассники', icon: '/social/ok.webp', href: 'https://ok.ru' },
 ];
+
+interface NavItemData {
+  label: string;
+  icon: typeof IconListDetails;
+  route: Route<void>;
+  active: boolean;
+}
+
+/**
+ * Пункт навигации.
+ *
+ * Текущая страница ссылкой не является: вести на саму себя незачем, а щелчок
+ * по ней выглядит так, будто ничего не произошло. Вместо ссылки —
+ * неинтерактивный `span` с `aria-current="page"`: скринридер объявит его
+ * текущей страницей, а мышь и клавиатура пройдут мимо. Подсветка — заливкой,
+ * как в примерах шапок Mantine.
+ */
+function NavItem({
+  item,
+  justify,
+  onNavigate,
+}: {
+  item: NavItemData;
+  justify?: string;
+  onNavigate?: () => void;
+}) {
+  const icon = <item.icon size={18} stroke={1.8} />;
+
+  if (item.active) {
+    return (
+      <Button
+        component="span"
+        aria-current="page"
+        variant="light"
+        justify={justify}
+        leftSection={icon}
+        style={{ cursor: 'default' }}
+      >
+        {item.label}
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      component={RouteLink}
+      to={item.route}
+      variant="subtle"
+      justify={justify}
+      leftSection={icon}
+      onClick={onNavigate}
+    >
+      {item.label}
+    </Button>
+  );
+}
 
 /**
  * Общий каркас страниц: шапка с навигацией, содержимое и подвал.
@@ -33,23 +90,50 @@ const SOCIAL = [
  */
 export function Layout({ children }: PropsWithChildren) {
   const { user, isAuthenticated, isAdmin, logout } = useUnit(SessionModel.viewModel);
-  const { openApplications, openCreate, openAdmin } = useUnit({
-    openApplications: routes.applications.open,
-    openCreate: routes.applicationCreate.open,
-    openAdmin: routes.admin.open,
-  });
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
 
-  const navigate = (open: () => void) => () => {
-    closeMenu();
-    open();
-  };
+  /*
+    Какой маршрут открыт сейчас. Подписки объявляются разом, а не в цикле по
+    пунктам меню: хук нельзя вызывать внутри map.
+  */
+  const opened = useUnit({
+    applications: routes.applications.$isOpened,
+    applicationCreate: routes.applicationCreate.$isOpened,
+    admin: routes.admin.$isOpened,
+  });
 
+  /**
+   * Навигация — это ссылки, а не кнопки.
+   *
+   * `Link` из роутера рендерит настоящий `<a href>`: адрес виден в строке
+   * состояния, страница открывается в новой вкладке средней кнопкой мыши или
+   * с Ctrl, а скринридер объявляет пункт ссылкой, а не кнопкой. Обычный клик
+   * роутер перехватывает сам — перезагрузки страницы не происходит.
+   *
+   * Кнопкой остаётся только «Выйти»: это действие, а не переход.
+   */
   const navItems = [
-    { label: 'Мои заявки', icon: IconListDetails, action: navigate(openApplications) },
-    { label: 'Новая заявка', icon: IconCalendarPlus, action: navigate(openCreate) },
+    {
+      label: 'Мои заявки',
+      icon: IconListDetails,
+      route: routes.applications,
+      active: opened.applications,
+    },
+    {
+      label: 'Новая заявка',
+      icon: IconCalendarPlus,
+      route: routes.applicationCreate,
+      active: opened.applicationCreate,
+    },
     ...(isAdmin
-      ? [{ label: 'Панель администратора', icon: IconShieldCog, action: navigate(openAdmin) }]
+      ? [
+          {
+            label: 'Панель администратора',
+            icon: IconShieldCog,
+            route: routes.admin,
+            active: opened.admin,
+          },
+        ]
       : []),
   ];
 
@@ -66,20 +150,13 @@ export function Layout({ children }: PropsWithChildren) {
       <AppShell.Header>
         <Container size="lg" h="100%" px="md">
           <Group h="100%" justify="space-between" wrap="nowrap">
-            <Logo onClick={isAuthenticated ? navigate(openApplications) : undefined} />
+            <Logo route={isAuthenticated ? routes.applications : undefined} />
 
             {isAuthenticated ? (
               <>
                 <Group gap={4} visibleFrom="sm" wrap="nowrap">
                   {navItems.map((item) => (
-                    <Button
-                      key={item.label}
-                      variant="subtle"
-                      leftSection={<item.icon size={18} stroke={1.8} />}
-                      onClick={item.action}
-                    >
-                      {item.label}
-                    </Button>
+                    <NavItem key={item.label} item={item} />
                   ))}
                   <Divider orientation="vertical" mx="xs" />
                   <Stack gap={0} align="flex-end">
@@ -122,15 +199,8 @@ export function Layout({ children }: PropsWithChildren) {
           </Stack>
           <Divider />
           {navItems.map((item) => (
-            <Button
-              key={item.label}
-              variant="subtle"
-              justify="flex-start"
-              leftSection={<item.icon size={18} stroke={1.8} />}
-              onClick={item.action}
-            >
-              {item.label}
-            </Button>
+            // Меню выдвижное: после перехода его нужно закрыть руками.
+            <NavItem key={item.label} item={item} justify="flex-start" onNavigate={closeMenu} />
           ))}
           <Divider />
           <Button
@@ -144,12 +214,21 @@ export function Layout({ children }: PropsWithChildren) {
         </Stack>
       </AppShell.Navbar>
 
-      <AppShell.Main>
-        <Container size="lg" py="md" px="md">
+      {/*
+        Колонка во всю высоту экрана: содержимое растягивается, подвал
+        прижимается к низу. Без этого на коротких страницах подвал вставал
+        сразу под карточкой, а под ним оставалось пустое поле.
+
+        `100dvh`, а не `100vh`: на мобильных браузерах адресная строка
+        скрывается, и `vh` считается по развёрнутому окну — подвал уезжал бы
+        за край.
+      */}
+      <AppShell.Main style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+        <Container size="lg" py="md" px="md" w="100%" style={{ flex: 1 }}>
           {children}
         </Container>
 
-        <Container size="lg" px="md" pb="xl" pt="xl">
+        <Container size="lg" px="md" pb="xl" pt="xl" w="100%">
           <Divider mb="md" />
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
             <Stack gap={4}>

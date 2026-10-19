@@ -48,7 +48,9 @@ check('ошибки валидации показываются на форме 
   await page.fillByLabel('Логин', 'ab');
   await page.fillByLabel('Пароль', '123');
   await page.fillByLabel('ФИО', 'Ivanov Ivan');
-  await page.fillByLabel('Телефон', '89991234567');
+  // Поле под маской: ввести «+7…» или буквы оно не даст, поэтому проверяем
+  // то, что действительно может случиться, — недописанный номер.
+  await page.fillByLabel('Телефон', '8999');
   await page.fillByLabel('Электронная почта', 'не-почта');
   await page.clickByText('Создать пользователя');
 
@@ -126,14 +128,13 @@ const USER = {
 const ROOM = 'Кинозал «Премьера»';
 const PAYMENT = 'Переводом по системе СБП';
 
-function startsAtValue(daysFromNow) {
+/** Дата начала конференции: время подставит сам календарь из defaultTimeValue. */
+function startsAtDate(daysFromNow) {
   const date = new Date();
   date.setDate(date.getDate() + daysFromNow);
   date.setHours(10, 0, 0, 0);
 
-  const pad = (value) => String(value).padStart(2, '0');
-
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T10:00`;
+  return date;
 }
 
 async function logout(page) {
@@ -170,7 +171,7 @@ check('полный сценарий: регистрация, заявка, см
   assert.equal(await page.url(), '/applications/new');
 
   await page.selectByLabel('Помещение', ROOM);
-  await page.fillByLabel('Начало конференции', startsAtValue(30));
+  await page.pickDateByLabel('Начало конференции', startsAtDate(30));
   await page.selectByLabel('Способ оплаты', PAYMENT);
   await page.clickByText('Отправить');
 

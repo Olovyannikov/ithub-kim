@@ -12,6 +12,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useMask } from '@mantine/hooks';
 import { IconAt, IconLock, IconPhone, IconUser, IconUserPlus } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
 
@@ -43,6 +44,25 @@ export function RegisterPage() {
   const fieldProps = (name: keyof RegisterValues) => ({
     ...form.getInputProps(name),
     error: form.errors[name] ?? serverErrors.fields[name],
+  });
+
+  /**
+   * Маска телефона — `useMask` из `@mantine/hooks`.
+   *
+   * ТЗ требует строго `8(XXX)XXX-XX-XX`, и раньше пользователь узнавал об
+   * этом только после ошибки: вводил `+79126984159` и получал красное поле.
+   * Маска показывает формат сразу и не даёт ввести лишнего, так что ошибка
+   * остаётся только для действительно незаполненного номера.
+   *
+   * Поле при этом неуправляемое: маска пишет значение в DOM сама, а в форму
+   * оно попадает через `onChangeRaw` — иначе два источника значения спорили
+   * бы за каждый символ.
+   */
+  // Деструктурируем сразу: `phoneMask.ref` в разметке линтер принимает за
+  // чтение ref во время рендера, хотя это callback-ref, а не объект.
+  const { ref: phoneRef } = useMask({
+    mask: '8(999)999-99-99',
+    onChangeRaw: (_raw, masked) => form.setFieldValue('phone', masked),
   });
 
   return (
@@ -105,12 +125,15 @@ export function RegisterPage() {
                 />
 
                 <TextInput
+                  ref={phoneRef}
                   label="Телефон"
                   placeholder="8(XXX)XXX-XX-XX"
                   autoComplete="tel"
+                  inputMode="tel"
                   leftSection={<IconPhone size={18} stroke={1.8} />}
                   withAsterisk
-                  {...fieldProps('phone')}
+                  onBlur={() => form.validateField('phone')}
+                  error={form.errors.phone ?? serverErrors.fields.phone}
                 />
 
                 <TextInput
