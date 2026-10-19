@@ -5,6 +5,7 @@ import {
   type ApplicationStatus,
 } from '@kim/shared';
 import { combine, createEffect, createEvent, createStore, sample } from 'effector';
+import { debounce } from 'patronum';
 
 import { roomsRequested } from '../../entities/room';
 import { applicationsApi } from '../../shared/api';
@@ -103,8 +104,18 @@ const $query = combine($filters, $page, (filters, page) => ({
 
 sample({ clock: routes.admin.opened, target: roomsRequested });
 
+/**
+ * Фильтры с задержкой.
+ *
+ * Поле «Заявитель» — обычный ввод, и без задержки каждый символ уходил
+ * отдельным запросом: замер показал девять запросов на девять символов.
+ * Задержка в 300 мс оставляет один. Открытие страницы, сброс и смена
+ * страницы задержки не требуют — там событие однократное.
+ */
+const filtersSettled = debounce(filtersChanged, 300);
+
 sample({
-  clock: [routes.admin.opened, filtersChanged, filtersReset, pageChanged],
+  clock: [routes.admin.opened, filtersSettled, filtersReset, pageChanged],
   source: $query,
   target: fetchAllFx,
 });

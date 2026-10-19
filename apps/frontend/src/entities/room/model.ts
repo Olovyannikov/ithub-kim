@@ -34,4 +34,16 @@ export const $roomOptions = $rooms.map((rooms) => {
   return [...groups.entries()].map(([group, items]) => ({ group, items }));
 });
 
-sample({ clock: roomsRequested, target: fetchRoomsFx });
+/**
+ * Справочник статичен, поэтому грузится один раз за сеанс.
+ *
+ * Замер до правки: шесть переходов между страницей заявки и панелью
+ * администратора давали шесть одинаковых запросов. Теперь — один.
+ */
+sample({
+  clock: roomsRequested,
+  source: $rooms,
+  filter: (rooms) => rooms.length === 0,
+  fn: (): void => undefined,
+  target: fetchRoomsFx,
+});

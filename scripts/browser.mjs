@@ -18,7 +18,25 @@ const CHROME_PATHS = [
   '/usr/bin/chromium',
 ];
 
-const DEBUG_PORT = 9333;
+/**
+ * Порт отладки выбирается свободный на каждый запуск.
+ *
+ * С фиксированным портом новый запуск молча присоединялся к Chrome,
+ * оставшемуся от упавшего прошлого, и проверки шли в чужом, уже испорченном
+ * браузере — ошибка выглядела как «поле не найдено».
+ */
+async function freePort() {
+  const { createServer } = await import('node:net');
+
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.on('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      server.close(() => resolve(port));
+    });
+  });
+}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -51,6 +69,7 @@ export async function launchBrowser({ chromePath, width = 1280, height = 900 } =
     throw new Error('Не найден Chrome. Укажите путь через CHROME_PATH');
   }
 
+  const port = await freePort();
   const profile = mkdtempSync(join(tmpdir(), 'kim-e2e-'));
   const chrome = spawn(
     binary,
@@ -59,7 +78,7 @@ export async function launchBrowser({ chromePath, width = 1280, height = 900 } =
       '--disable-gpu',
       '--no-first-run',
       '--no-default-browser-check',
-      `--remote-debugging-port=${DEBUG_PORT}`,
+      `--remote-debugging-port=${port}`,
       `--user-data-dir=${profile}`,
       // Размер окна задаём явно: по умолчанию headless даёт 800x600, и
       // элементы с `visibleFrom="sm"` оказываются скрытыми. Для проверки
@@ -70,7 +89,7 @@ export async function launchBrowser({ chromePath, width = 1280, height = 900 } =
     { stdio: 'ignore' },
   );
 
-  const version = await waitForDebugger(DEBUG_PORT);
+  const version = await waitForDebugger(port);
   const socket = new WebSocket(version.webSocketDebuggerUrl);
 
   await new Promise((resolve, reject) => {
@@ -170,6 +189,32 @@ export async function openPage(browser) {
      * уже примерно 500 px. А Задание 2 требует макет ровно 390×844, поэтому
      * проверять надо эмуляцией, а не размером окна.
      */
+    /**
+     * Журнал обращений к сети средствами протокола, а не подменой `fetch`.
+     *
+     * Подмена `window.fetch` не переживает переход на другую страницу, и
+     * счётчик молча обнуляется. Для замеров производительности это ровно та
+     * ошибка, из-за которой «всё хорошо» на бумаге.
+     */
+    async startNetworkLog() {
+      this.networkLog = [];
+      browser.on('Network.requestWillBeSent', (params) => {
+        this.networkLog.push(params.request.url);
+      });
+      await call('Network.enable');
+    },
+
+    networkLog: [],
+
+    /** Запросы к нашему API; можно сузить по подстроке пути. */
+    apiCalls(filter = '') {
+      return this.networkLog.filter((url) => url.includes('/api/') && url.includes(filter));
+    },
+
+    resetNetworkLog() {
+      this.networkLog = [];
+    },
+
     async setViewport({ width, height, deviceScaleFactor = 2, mobile = true }) {
       await call('Emulation.setDeviceMetricsOverride', {
         width,
