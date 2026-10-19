@@ -9,8 +9,11 @@ coverage/
 .idea/
 .vscode/
 
-# Полный офлайн-справочник Mantine (~4.6 МБ), тянется через pnpm mantine:docs:full
-docs/stack/mantine/llms-full.txt
+# Офлайн-справочники по стеку: качаются командами pnpm stack:docs и
+# pnpm mantine:docs:full, едут на площадку в архиве pnpm bundle.
+# В репозитории им делать нечего — это мегабайты чужого текста.
+docs/stack/*/llms-full.txt
+docs/stack/react/
 
 # Сборка тестов (node --test по скомпилированному JS)
 dist-test/
@@ -19,3 +22,6 @@ dist-test/
 apps/backend-py/.venv/
 apps/backend-py/wheels/
 apps/backend-py/**/__pycache__/
+
+# Офлайн-архив для переноса на экзаменационную машину (pnpm bundle)
+offline/

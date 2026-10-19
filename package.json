@@ -8,7 +8,7 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "prepare": "lefthook install",
+    "prepare": "node scripts/install-hooks.mjs",
     "dev": "pnpm run shared:build && concurrently -n shared,back,front -c gray,blue,magenta \"pnpm run shared:dev\" \"pnpm run dev:back\" \"pnpm run dev:front\"",
     "dev:back": "pnpm --filter @kim/backend dev",
     "dev:front": "pnpm --filter @kim/frontend dev",
@@ -20,8 +20,11 @@
     "e2e": "node scripts/e2e.mjs",
     "images": "node scripts/optimize-images.mjs",
     "erd": "node scripts/generate-erd.mjs",
+    "bundle": "node scripts/offline-bundle.mjs",
+    "offline:prep": "pnpm stack:docs && pnpm mantine:docs:full && pnpm py:wheels && pnpm bundle",
     "shared:python": "node scripts/generate-python-shared.mjs",
     "py:install": "bash scripts/python-setup.sh",
+    "py:wheels": "cd apps/backend-py && python3 -m pip download -r requirements.txt -d wheels --trusted-host pypi.org --trusted-host files.pythonhosted.org",
     "py:dev": "apps/backend-py/.venv/bin/python -m uvicorn app.main:app --app-dir apps/backend-py --port ${PY_API_PORT:-3001} --reload",
     "py:seed": "cd apps/backend-py && .venv/bin/python -m app.seed",
     "lint": "eslint .",
@@ -31,6 +34,7 @@
     "format:check": "prettier --check .",
     "mantine:docs": "bash scripts/fetch-mantine-docs.sh",
     "mantine:docs:full": "bash scripts/fetch-mantine-docs.sh --full",
+    "stack:docs": "node scripts/fetch-stack-docs.mjs",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
