@@ -34,7 +34,7 @@ import {
 
 /** Задание 1, п. 3: страница просмотра заявок. */
 export function ApplicationsPage() {
-  const [
+  const {
     applications,
     viewState,
     reviewingId,
@@ -44,17 +44,17 @@ export function ApplicationsPage() {
     closeReview,
     submitReview,
     openCreate,
-  ] = useUnit([
-    $applications,
-    $viewState,
-    $reviewingId,
-    $reviewErrors,
-    $reviewPending,
-    reviewFormOpened,
-    reviewFormClosed,
-    reviewSubmitted,
-    routes.applicationCreate.open,
-  ]);
+  } = useUnit({
+    applications: $applications,
+    viewState: $viewState,
+    reviewingId: $reviewingId,
+    reviewErrors: $reviewErrors,
+    reviewPending: $reviewPending,
+    openReview: reviewFormOpened,
+    closeReview: reviewFormClosed,
+    submitReview: reviewSubmitted,
+    openCreate: routes.applicationCreate.open,
+  });
 
   const form = useForm<ReviewValues>({
     initialValues: { rating: 5, text: '' },

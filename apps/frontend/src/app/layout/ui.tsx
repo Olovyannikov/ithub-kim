@@ -32,17 +32,16 @@ const SOCIAL = [
  * часть проектируется от макета 390×844 (ADR-0008).
  */
 export function Layout({ children }: { children: ReactNode }) {
-  const [user, isAuthenticated, isAdmin, logout, openApplications, openCreate, openAdmin] = useUnit(
-    [
-      $user,
-      $isAuthenticated,
-      $isAdmin,
-      logoutRequested,
-      routes.applications.open,
-      routes.applicationCreate.open,
-      routes.admin.open,
-    ],
-  );
+  const { user, isAuthenticated, isAdmin, logout, openApplications, openCreate, openAdmin } =
+    useUnit({
+      user: $user,
+      isAuthenticated: $isAuthenticated,
+      isAdmin: $isAdmin,
+      logout: logoutRequested,
+      openApplications: routes.applications.open,
+      openCreate: routes.applicationCreate.open,
+      openAdmin: routes.admin.open,
+    });
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
 
   const navigate = (open: () => void) => () => {

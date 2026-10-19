@@ -37,7 +37,7 @@ import {
 
 /** Задание 1, п. 5 и Задание 2, п. 5: панель администратора. */
 export function AdminPage() {
-  const [
+  const {
     viewState,
     total,
     filters,
@@ -49,19 +49,19 @@ export function AdminPage() {
     resetFilters,
     changePage,
     changeStatus,
-  ] = useUnit([
-    $viewState,
-    $total,
-    $filters,
-    $page,
-    $pageCount,
-    $updatingId,
-    $roomOptions,
-    filtersChanged,
-    filtersReset,
-    pageChanged,
-    statusChangeRequested,
-  ]);
+  } = useUnit({
+    viewState: $viewState,
+    total: $total,
+    filters: $filters,
+    page: $page,
+    pageCount: $pageCount,
+    updatingId: $updatingId,
+    roomOptions: $roomOptions,
+    changeFilters: filtersChanged,
+    resetFilters: filtersReset,
+    changePage: pageChanged,
+    changeStatus: statusChangeRequested,
+  });
 
   const hasFilters =
     filters.status !== null ||

@@ -27,12 +27,12 @@ import { $pending, $serverErrors, formSubmitted, type RegisterValues } from './m
  * `@kim/shared` через `validators` (ADR-0005).
  */
 export function RegisterPage() {
-  const [serverErrors, pending, submit, openLogin] = useUnit([
-    $serverErrors,
-    $pending,
-    formSubmitted,
-    routes.login.open,
-  ]);
+  const { serverErrors, pending, submit, openLogin } = useUnit({
+    serverErrors: $serverErrors,
+    pending: $pending,
+    submit: formSubmitted,
+    openLogin: routes.login.open,
+  });
 
   const form = useForm<RegisterValues>({
     initialValues: { login: '', password: '', fullName: '', phone: '', email: '' },

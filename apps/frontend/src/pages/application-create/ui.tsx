@@ -17,14 +17,14 @@ import {
 
 /** Задание 1, п. 4: страница формирования заявки. */
 export function ApplicationCreatePage() {
-  const [roomOptions, roomsPending, pending, serverErrors, submit, openApplications] = useUnit([
-    $roomOptions,
-    $roomsPending,
-    $pending,
-    $serverErrors,
-    formSubmitted,
-    routes.applications.open,
-  ]);
+  const { roomOptions, roomsPending, pending, serverErrors, submit, openApplications } = useUnit({
+    roomOptions: $roomOptions,
+    roomsPending: $roomsPending,
+    pending: $pending,
+    serverErrors: $serverErrors,
+    submit: formSubmitted,
+    openApplications: routes.applications.open,
+  });
 
   const form = useForm<CreateValues>({
     initialValues: { roomId: null, startsAt: '', paymentMethod: null },

@@ -22,12 +22,14 @@ import { $pending, $serverErrors, formSubmitted, type LoginValues } from './mode
 
 /** Задание 1, п. 2: страница авторизации. */
 export function LoginPage() {
-  const [serverErrors, pending, submit, openRegister] = useUnit([
-    $serverErrors,
-    $pending,
-    formSubmitted,
-    routes.register.open,
-  ]);
+  // Объектная форма useUnit, а не массив: имена связаны с юнитами явно, и
+  // перестановка строк не может незаметно подменить значения местами.
+  const { serverErrors, pending, submit, openRegister } = useUnit({
+    serverErrors: $serverErrors,
+    pending: $pending,
+    submit: formSubmitted,
+    openRegister: routes.register.open,
+  });
 
   const form = useForm<LoginValues>({
     initialValues: { login: '', password: '' },
