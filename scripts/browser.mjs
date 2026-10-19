@@ -163,6 +163,28 @@ export async function openPage(browser) {
     sessionId,
     call,
 
+    /**
+     * Точный размер экрана через эмуляцию устройства.
+     *
+     * Через `--window-size` добиться 390 px нельзя: окно Chrome не становится
+     * уже примерно 500 px. А Задание 2 требует макет ровно 390×844, поэтому
+     * проверять надо эмуляцией, а не размером окна.
+     */
+    async setViewport({ width, height, deviceScaleFactor = 2, mobile = true }) {
+      await call('Emulation.setDeviceMetricsOverride', {
+        width,
+        height,
+        deviceScaleFactor,
+        mobile,
+        screenWidth: width,
+        screenHeight: height,
+      });
+
+      if (mobile) {
+        await call('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+      }
+    },
+
     async goto(url) {
       await call('Page.navigate', { url });
       await sleep(200);
@@ -344,6 +366,56 @@ export async function openPage(browser) {
       writeFileSync(path, Buffer.from(data, 'base64'));
 
       return path;
+    },
+
+    /**
+     * Щелчок по элементу с заданным `aria-label`.
+     *
+     * Нужен для кнопок-иконок: на широком экране выход оформлен значком, и по
+     * тексту его не найти. Ищем среди видимых, иначе попадём в пункт
+     * свёрнутого мобильного меню.
+     */
+    async clickByLabel(label) {
+      const ok = await this.evaluate(`(() => {
+        const nodes = Array.from(
+          document.querySelectorAll('[aria-label=' + JSON.stringify(${JSON.stringify(label)}) + ']'),
+        ).filter((n) => n.getClientRects().length > 0);
+        if (nodes.length === 0) return false;
+        nodes[0].click();
+        return true;
+      })()`);
+
+      if (!ok) {
+        throw new Error(`Не найден видимый элемент с подписью «${label}»`);
+      }
+
+      await sleep(600);
+    },
+
+    /**
+     * Виден ли элемент с таким текстом **в пределах экрана**.
+     *
+     * Проверять по innerText нельзя: свёрнутая панель Mantine остаётся в DOM
+     * и просто уезжает за границу окна, а скрытые через `visibleFrom` узлы,
+     * наоборот, из innerText пропадают. Здесь важно именно то, что видит
+     * пользователь.
+     */
+    async isVisibleByText(text) {
+      return this.evaluate(`(() => {
+        const nodes = Array.from(document.querySelectorAll('button, a')).filter(
+          (n) => n.textContent.trim() === ${JSON.stringify(text)},
+        );
+        return nodes.some((n) => {
+          const r = n.getBoundingClientRect();
+          return (
+            r.width > 0 &&
+            r.height > 0 &&
+            r.left >= 0 &&
+            r.top >= 0 &&
+            r.right <= window.innerWidth
+          );
+        });
+      })()`);
     },
 
     async waitForText(needle, timeoutMs = 10_000) {

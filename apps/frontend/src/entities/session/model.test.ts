@@ -1,7 +1,5 @@
-import assert from 'node:assert/strict';
-import { afterEach, describe, it } from 'node:test';
-
 import { allSettled, createWatch, fork } from 'effector';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { ApiError } from '../../shared/api';
 import {
@@ -54,9 +52,9 @@ describe('модель сессии', () => {
     const scope = fork();
     await allSettled(loginFx, { scope, params: { login: 'ivanov01', password: 'StrongPass1' } });
 
-    assert.deepEqual(scope.getState($user), USER);
-    assert.equal(scope.getState($isAuthenticated), true);
-    assert.equal(scope.getState($isAdmin), false);
+    expect(scope.getState($user)).toEqual(USER);
+    expect(scope.getState($isAuthenticated)).toBe(true);
+    expect(scope.getState($isAdmin)).toBe(false);
   });
 
   it('роль admin определяется по ответу сервера, а не по логину', async () => {
@@ -65,7 +63,7 @@ describe('модель сессии', () => {
     const scope = fork();
     await allSettled(loginFx, { scope, params: { login: 'Conf2027', password: 'Demo77' } });
 
-    assert.equal(scope.getState($isAdmin), true);
+    expect(scope.getState($isAdmin)).toBe(true);
   });
 
   it('401 на /auth/me — это «не вошёл», а не ошибка', async () => {
@@ -74,10 +72,10 @@ describe('модель сессии', () => {
     const scope = fork();
     await allSettled(fetchSessionFx, { scope });
 
-    assert.equal(scope.getState($user), null);
-    assert.equal(scope.getState($isAuthenticated), false);
+    expect(scope.getState($user)).toBe(null);
+    expect(scope.getState($isAuthenticated)).toBe(false);
     // Проверка завершилась — приложение знает, что пользователь гость.
-    assert.equal(scope.getState($sessionChecked), true);
+    expect(scope.getState($sessionChecked)).toBe(true);
   });
 
   it('ошибки с полями разбираются в ApiError и доезжают до failData', async () => {
@@ -102,12 +100,15 @@ describe('модель сессии', () => {
     await allSettled(loginFx, { scope, params: { login: 'ivanov01', password: 'wrong' } });
     unwatch();
 
-    assert.equal(failures.length, 1);
+    expect(failures.length).toBe(1);
     const error = failures[0];
-    assert.ok(error instanceof ApiError);
-    assert.equal(error.status, 401);
-    assert.equal(error.fieldError('login'), 'Неверный логин или пароль');
-    assert.equal(scope.getState($user), null);
+    expect(error).toBeInstanceOf(ApiError);
+    // Приведение нужно, потому что expect не сужает тип так, как это делал
+    // assert из node:test.
+    const apiError = error as ApiError;
+    expect(apiError.status).toBe(401);
+    expect(apiError.fieldError('login')).toBe('Неверный логин или пароль');
+    expect(scope.getState($user)).toBe(null);
   });
 
   it('недоступный сервер превращается в понятную ошибку, а не в падение', async () => {
@@ -125,9 +126,10 @@ describe('модель сессии', () => {
     unwatch();
 
     const error = failures[0];
-    assert.ok(error instanceof ApiError);
-    assert.equal(error.status, 0);
-    assert.match(error.message, /Сервер недоступен/);
+    expect(error).toBeInstanceOf(ApiError);
+    const apiError = error as ApiError;
+    expect(apiError.status).toBe(0);
+    expect(apiError.message).toMatch(/Сервер недоступен/);
   });
 
   it('выход очищает сессию', async () => {
@@ -137,11 +139,11 @@ describe('модель сессии', () => {
 
     const scope = fork();
     await allSettled(loginFx, { scope, params: { login: 'ivanov01', password: 'StrongPass1' } });
-    assert.equal(scope.getState($isAuthenticated), true);
+    expect(scope.getState($isAuthenticated)).toBe(true);
 
     await allSettled(logoutFx, { scope });
 
-    assert.equal(scope.getState($user), null);
-    assert.equal(scope.getState($isAuthenticated), false);
+    expect(scope.getState($user)).toBe(null);
+    expect(scope.getState($isAuthenticated)).toBe(false);
   });
 });

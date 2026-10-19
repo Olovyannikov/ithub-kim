@@ -18,6 +18,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "e2e": "node scripts/e2e.mjs",
+    "images": "python3 scripts/optimize-images.py",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

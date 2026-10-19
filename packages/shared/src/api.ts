@@ -1,3 +1,5 @@
+import type { ApplicationStatus, PaymentMethod, RoomKind, UserRole } from './domain';
+
 /**
  * Форма ответа API с ошибками. Общая для фронтенда и бэкенда, чтобы клиент
  * раскладывал ошибки по полям формы одним и тем же кодом — и для ошибок
@@ -17,14 +19,14 @@ export interface UserDto {
   fullName: string;
   phone: string;
   email: string;
-  role: string;
+  role: UserRole;
 }
 
 /** Помещение в ответах API. */
 export interface RoomDto {
   id: number;
   name: string;
-  kind: string;
+  kind: RoomKind;
   capacity: number | null;
   description: string | null;
   imageUrl: string | null;
@@ -43,8 +45,8 @@ export interface ApplicationDto {
   id: number;
   room: RoomDto;
   startsAt: string;
-  paymentMethod: string;
-  status: string;
+  paymentMethod: PaymentMethod;
+  status: ApplicationStatus;
   createdAt: string;
   review: ReviewDto | null;
   /** Можно ли оставить отзыв — считается на сервере по статусу заявки. */

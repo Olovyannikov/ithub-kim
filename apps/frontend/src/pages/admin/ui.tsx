@@ -13,6 +13,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
+import { IconFilterOff, IconSearch } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
 
 import { ApplicationCard } from '../../entities/application';
@@ -118,6 +119,7 @@ export function AdminPage() {
               <TextInput
                 label="Заявитель"
                 placeholder="Логин или ФИО"
+                leftSection={<IconSearch size={18} stroke={1.8} />}
                 value={filters.author}
                 onChange={(event) =>
                   changeFilters({ ...filters, author: event.currentTarget.value })
@@ -144,7 +146,11 @@ export function AdminPage() {
 
           {hasFilters ? (
             <Group justify="flex-end">
-              <Button variant="subtle" onClick={() => resetFilters()}>
+              <Button
+                variant="subtle"
+                leftSection={<IconFilterOff size={18} stroke={1.8} />}
+                onClick={() => resetFilters()}
+              >
                 Сбросить фильтры
               </Button>
             </Group>
@@ -175,11 +181,12 @@ export function AdminPage() {
       ) : null}
 
       <Stack gap="md">
-        {items.map((application) => (
+        {items.map((application, index) => (
           <ApplicationCard
             key={application.id}
             application={application}
             withAuthor
+            eagerImage={index === 0}
             actions={
               // Задание 1, п. 5: администратор меняет статус на «Мероприятие
               // назначено» или «Завершено». Статус «Новая» вручную не ставится.

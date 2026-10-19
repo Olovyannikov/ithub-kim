@@ -12,5 +12,5 @@
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "vitest.config.ts"]
 }

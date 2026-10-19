@@ -12,6 +12,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { IconCalendarPlus, IconMessage2Plus, IconSend } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
 
 import { ApplicationCard } from '../../entities/application';
@@ -76,7 +77,12 @@ export function ApplicationsPage() {
             </Text>
           ) : null}
         </Stack>
-        <Button onClick={() => openCreate()}>Новая заявка</Button>
+        <Button
+          leftSection={<IconCalendarPlus size={18} stroke={1.8} />}
+          onClick={() => openCreate()}
+        >
+          Новая заявка
+        </Button>
       </Group>
 
       {loadError ? (
@@ -99,21 +105,31 @@ export function ApplicationsPage() {
               Выберите помещение для конференции и укажите удобное время — заявка поступит
               администратору портала.
             </Text>
-            <Button onClick={() => openCreate()}>Сформировать заявку</Button>
+            <Button
+              leftSection={<IconCalendarPlus size={18} stroke={1.8} />}
+              onClick={() => openCreate()}
+            >
+              Сформировать заявку
+            </Button>
           </Stack>
         </Card>
       ) : null}
 
       <Stack gap="md">
-        {applications.map((application) => (
+        {applications.map((application, index) => (
           <ApplicationCard
             key={application.id}
             application={application}
+            eagerImage={index === 0}
             actions={
               // Право на отзыв считает сервер: Задание 2, п. 3 — только после
               // завершения мероприятия.
               application.canLeaveReview ? (
-                <Button variant="light" onClick={() => openReview(application.id)}>
+                <Button
+                  variant="light"
+                  leftSection={<IconMessage2Plus size={18} stroke={1.8} />}
+                  onClick={() => openReview(application.id)}
+                >
                   Оставить отзыв
                 </Button>
               ) : null
@@ -170,7 +186,11 @@ export function ApplicationsPage() {
               <Button variant="default" onClick={() => closeReview()}>
                 Отмена
               </Button>
-              <Button type="submit" loading={reviewPending}>
+              <Button
+                type="submit"
+                loading={reviewPending}
+                leftSection={<IconSend size={18} stroke={1.8} />}
+              >
                 Отправить отзыв
               </Button>
             </Group>

@@ -32,6 +32,11 @@ interface RoomSeed {
   kind: RoomKind;
   capacity: number;
   description: string;
+  /**
+   * Базовое имя файла изображения. Конкретные размеры и форматы подставляет
+   * фронтенд: `/rooms/<slug>-480.avif` и так далее (ADR-0008).
+   */
+  imageUrl: string;
 }
 
 const ROOMS: readonly RoomSeed[] = [
@@ -40,54 +45,63 @@ const ROOMS: readonly RoomSeed[] = [
     kind: 'Аудитория',
     capacity: 120,
     description: 'Поточная аудитория с амфитеатром, проектором и микрофонной системой.',
+    imageUrl: 'lomonosov',
   },
   {
     name: 'Аудитория «Вернадский»',
     kind: 'Аудитория',
     capacity: 60,
     description: 'Аудитория для секционных заседаний, доска и панель для презентаций.',
+    imageUrl: 'vernadsky',
   },
   {
     name: 'Аудитория «Менделеев»',
     kind: 'Аудитория',
     capacity: 30,
     description: 'Небольшая аудитория для круглых столов и мастер-классов.',
+    imageUrl: 'mendeleev',
   },
   {
     name: 'Коворкинг «Открытое пространство»',
     kind: 'Коворкинг',
     capacity: 80,
     description: 'Открытая зона с трансформируемой мебелью для воркшопов и нетворкинга.',
+    imageUrl: 'open-space',
   },
   {
     name: 'Коворкинг «Мансарда»',
     kind: 'Коворкинг',
     capacity: 40,
     description: 'Светлое пространство с панорамными окнами и зоной для кофе-брейка.',
+    imageUrl: 'mansarda',
   },
   {
     name: 'Коворкинг «Переговорная №7»',
     kind: 'Коворкинг',
     capacity: 16,
     description: 'Переговорная комната с видеоконференцсвязью для рабочих групп.',
+    imageUrl: 'meeting-7',
   },
   {
     name: 'Кинозал «Премьера»',
     kind: 'Кинозал',
     capacity: 200,
     description: 'Большой зал с экраном 12 метров и звуком 7.1 для пленарных заседаний.',
+    imageUrl: 'premiera',
   },
   {
     name: 'Кинозал «Хроника»',
     kind: 'Кинозал',
     capacity: 90,
     description: 'Зал для показов и презентаций с наклонным партером.',
+    imageUrl: 'hronika',
   },
   {
     name: 'Кинозал «Камера»',
     kind: 'Кинозал',
     capacity: 45,
     description: 'Компактный зал для просмотров и обсуждений в малых группах.',
+    imageUrl: 'kamera',
   },
 ];
 
@@ -186,14 +200,28 @@ async function seed(): Promise<void> {
     const passwords = new PasswordService();
 
     let createdRooms = 0;
+    let updatedRooms = 0;
 
     for (const seedRoom of ROOMS) {
-      if (await rooms.exists({ where: { name: seedRoom.name } })) {
+      const existing = await rooms.findOne({ where: { name: seedRoom.name } });
+
+      if (!existing) {
+        await rooms.save(rooms.create(seedRoom));
+        createdRooms += 1;
         continue;
       }
 
-      await rooms.save(rooms.create(seedRoom));
-      createdRooms += 1;
+      // Справочник обновляется, а не только дополняется: иначе изменения в
+      // описаниях и ссылках на изображения не доезжают до уже созданной базы.
+      const changed =
+        existing.description !== seedRoom.description ||
+        existing.imageUrl !== seedRoom.imageUrl ||
+        existing.capacity !== seedRoom.capacity;
+
+      if (changed) {
+        await rooms.save({ ...existing, ...seedRoom });
+        updatedRooms += 1;
+      }
     }
 
     let createdUsers = 0;
@@ -259,7 +287,8 @@ async function seed(): Promise<void> {
     // eslint-disable-next-line no-console
     console.log(
       [
-        `[seed] помещения: +${createdRooms}, всего ${await rooms.count()} (${ROOM_KINDS.join(', ')})`,
+        `[seed] помещения: +${createdRooms}, обновлено ${updatedRooms}, ` +
+          `всего ${await rooms.count()} (${ROOM_KINDS.join(', ')})`,
         `[seed] пользователи: +${createdUsers}, всего ${await users.count()}`,
         `[seed] заявки: +${createdApplications}, всего ${await applications.count()}`,
         `[seed] администратор: ${ADMIN.login} / ${ADMIN.password} (задан КИМ)`,

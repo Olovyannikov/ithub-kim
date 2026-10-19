@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { IconBuilding, IconCalendarEvent, IconCreditCard, IconSend } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
 
 import { $roomOptions, $roomsPending } from '../../entities/room';
@@ -70,6 +71,7 @@ export function ApplicationCreatePage() {
             data={roomOptions}
             searchable
             disabled={roomsPending}
+            leftSection={<IconBuilding size={18} stroke={1.8} />}
             withAsterisk
             {...form.getInputProps('roomId')}
             error={form.errors.roomId ?? serverErrors.fields.roomId}
@@ -79,6 +81,7 @@ export function ApplicationCreatePage() {
             type="datetime-local"
             label="Начало конференции"
             min={minDateTime}
+            leftSection={<IconCalendarEvent size={18} stroke={1.8} />}
             withAsterisk
             {...form.getInputProps('startsAt')}
             error={form.errors.startsAt ?? serverErrors.fields.startsAt}
@@ -88,6 +91,7 @@ export function ApplicationCreatePage() {
             label="Способ оплаты"
             placeholder="Выберите способ оплаты"
             data={PAYMENT_OPTIONS}
+            leftSection={<IconCreditCard size={18} stroke={1.8} />}
             withAsterisk
             {...form.getInputProps('paymentMethod')}
             error={form.errors.paymentMethod ?? serverErrors.fields.paymentMethod}
@@ -98,7 +102,11 @@ export function ApplicationCreatePage() {
               Отмена
             </Button>
             {/* Текст кнопки задан ТЗ — Задание 1, п. 4. */}
-            <Button type="submit" loading={pending}>
+            <Button
+              type="submit"
+              loading={pending}
+              leftSection={<IconSend size={18} stroke={1.8} />}
+            >
               Отправить
             </Button>
           </Group>

@@ -103,7 +103,7 @@ check('вошедший пользователь не остаётся на ст
 
 check('выход возвращает на страницу входа и закрывает доступ', async (page) => {
   await page.goto(`${BASE}/applications`);
-  await page.clickByText('Выйти');
+  await page.clickByLabel('Выйти');
 
   assert.ok(await page.waitForText('Вход'), 'после выхода ожидалась форма входа');
 
@@ -139,10 +139,15 @@ function startsAtValue(daysFromNow) {
 async function logout(page) {
   await page.goto(`${BASE}/applications`);
 
-  if ((await page.text()).includes('Выйти')) {
-    await page.clickByText('Выйти');
-    await page.waitForText('Вход');
+  // Если защищённый маршрут увёл на вход — пользователь уже вышел.
+  if ((await page.url()) === '/login') {
+    return;
   }
+
+  // На широком экране выход оформлен кнопкой-иконкой, поэтому ищем по подписи
+  // для экранных дикторов, а не по тексту.
+  await page.clickByLabel('Выйти');
+  await page.waitForText('Вход');
 }
 
 check('полный сценарий: регистрация, заявка, смена статуса админом, отзыв', async (page) => {
@@ -234,6 +239,46 @@ check('полный сценарий: регистрация, заявка, см
     !afterReview.includes('Оставить отзыв'),
     'второй отзыв об одном мероприятии оставить нельзя',
   );
+});
+
+check('мобильный макет 390x844: меню сворачивается и работает', async (page) => {
+  await logout(page);
+  // Размер из Задания 2. Через размер окна его не добиться — окно Chrome не
+  // становится уже примерно 500 px, поэтому включаем эмуляцию устройства.
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+
+  try {
+    await page.goto(`${BASE}/login`);
+    await page.fillByLabel('Логин', ADMIN.login);
+    await page.fillByLabel('Пароль', ADMIN.password);
+    await page.clickByText('Войти');
+    assert.ok(await page.waitForText('Мои заявки'), 'вход должен работать и на телефоне');
+
+    const width = await page.evaluate('window.innerWidth');
+    assert.equal(width, 390, 'ширина экрана должна быть ровно 390');
+
+    // Страница не должна уезжать вбок: горизонтальной прокрутки быть не может.
+    const overflow = await page.evaluate(
+      'document.documentElement.scrollWidth - document.documentElement.clientWidth',
+    );
+    assert.ok(overflow <= 0, `появилась горизонтальная прокрутка: ${overflow} px`);
+
+    // Навигация свёрнута в меню: пункт есть в разметке, но не виден на экране.
+    assert.equal(
+      await page.isVisibleByText('Панель администратора'),
+      false,
+      'на узком экране пункты меню не должны быть видны до нажатия на бургер',
+    );
+
+    await page.clickByLabel('Меню');
+    assert.equal(
+      await page.isVisibleByText('Панель администратора'),
+      true,
+      'после нажатия на бургер пункт меню должен стать виден',
+    );
+  } finally {
+    await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+  }
 });
 
 async function main() {
