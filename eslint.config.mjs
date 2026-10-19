@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
+import effector from 'eslint-plugin-effector';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -57,7 +58,7 @@ export default tseslint.config(
     },
   },
 
-  // Фронтенд: React
+  // Фронтенд: React и Effector
   {
     files: ['apps/frontend/**/*.{ts,tsx}'],
     languageOptions: {
@@ -69,6 +70,41 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
     },
+  },
+
+  /*
+   * eslint-plugin-effector — https://eslint.effector.dev
+   *
+   * Ловит ровно те ошибки, которые иначе находятся только в рантайме:
+   * забытый `sample` вместо вызова эффекта из обработчика, утечка юнитов
+   * между scope, неправильное использование хуков effector-react.
+   * Для нас это страховка под таймером: такие ошибки в день экзамена искать
+   * дороже всего (ADR-0006).
+   *
+   * Конфиг `scope` не включаем: `fork`/`Provider` используются только в
+   * тестах, а в приложении Scope не применяется — иначе правила требовали бы
+   * передавать scope там, где его нет.
+   */
+  {
+    files: ['apps/frontend/**/*.{ts,tsx}'],
+    ...effector.flatConfigs.recommended,
+    languageOptions: {
+      ...effector.flatConfigs.recommended.languageOptions,
+      // Часть правил плагина опирается на типы (например, проверка имён
+      // эффектов), поэтому для фронтенда включён типизированный линтинг.
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    files: ['apps/frontend/**/*.{ts,tsx}'],
+    ...effector.flatConfigs.react,
+  },
+  {
+    files: ['apps/frontend/**/*.{ts,tsx}'],
+    ...effector.flatConfigs.patronum,
   },
 
   // Конфиги сборки

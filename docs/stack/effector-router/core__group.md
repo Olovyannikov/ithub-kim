@@ -1,0 +1,91 @@
+<!--
+Источник: https://router.effector.dev/core/group
+Снято скриптом scripts/fetch-router-docs.sh — не править вручную.
+-->
+
+# group ​
+Create a pathless route that opens when any of the passed routes is opened, and closes when all passed routes are closed.
+
+## API ​
+typescriptfunction group(routes: Route<any>[]): PathlessRoute;
+
+### Parameters ​
+ParameterTypeDescription
+routesRoute<any>[]Path or pathless routes to group
+
+### Returns ​
+PathlessRoute - A route that tracks the combined state of all passed routes. The deprecated createVirtualRoute alias remains accepted for compatibility, but new route declarations should use createRoute().
+
+## Usage ​
+
+### Basic Example ​
+tsimport { group, createRoute } from '@effector/router';
+
+const signInRoute = createRoute();
+const signUpRoute = createRoute();
+const authorizationRoute = group([signInRoute, signUpRoute]);
+
+signInRoute.open(); // authorizationRoute.$isOpened → true
+signUpRoute.open(); // authorizationRoute.$isOpened → true
+signInRoute.close(); // authorizationRoute.$isOpened → true (signUpRoute still open)
+signUpRoute.close(); // authorizationRoute.$isOpened → false (all closed)
+
+Regular routes do not expose a public close() method. Their open state follows router navigation, as shown in the examples below. Use virtual routes when the grouped states must be opened and closed manually.
+
+### Guard Multiple Routes ​
+tsimport { group, createRoute, createRouter } from '@effector/router';
+import { sample } from 'effector';
+
+const profileRoute = createRoute({ path: '/profile' });
+const settingsRoute = createRoute({ path: '/settings' });
+const dashboardRoute = createRoute({ path: '/dashboard' });
+
+const authenticatedRoutes = group([
+  profileRoute,
+  settingsRoute,
+  dashboardRoute,
+]);
+
+// Redirect to login if trying to access any authenticated route
+sample({
+  clock: authenticatedRoutes.opened,
+  filter: () => !isAuthenticated(),
+  target: loginRoute.open,
+});
+
+### Track Section State ​
+tsimport { group, createRoute } from '@effector/router';
+import { useUnit } from 'effector-react';
+
+const productsRoute = createRoute({ path: '/shop/products' });
+const cartRoute = createRoute({ path: '/shop/cart' });
+const checkoutRoute = createRoute({ path: '/shop/checkout' });
+
+const shopSection = group([productsRoute, cartRoute, checkoutRoute]);
+
+function ShopIndicator() {
+  const isShopActive = useUnit(shopSection.$isOpened);
+
+  return (
+    <div className={isShopActive ? 'shop-active' : ''}>
+      Shopping Section
+    </div>
+  );
+}
+
+## How It Works ​
+The group function creates a virtual route that:
+
+- Opens when any of the grouped routes opens
+- Closes when all of the grouped routes close
+- Tracks combined pending state ($isPending) from all routesThis is useful for:
+
+- Showing UI indicators for route sections
+- Tracking navigation state across related routesgroup is a derived virtual route, not a route-selection object for transition policy. Pass a path-route array to beforeNavigate({ to: [...] }) when several routes share the same pre-commit rule.
+
+## See Also ​
+
+- createVirtualRoute - Create custom virtual routes
+- createRoute - Create regular routes
+- chainRoute - Create sequential route chains
+- beforeNavigate - Hold transitions to route arrays

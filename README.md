@@ -91,11 +91,11 @@
 
 Зафиксирован в [ADR-0001](./docs/adr/0001-stack.md):
 
-- **Backend:** NestJS 12, PostgreSQL 17
-- **Frontend:** React 19, Vite 8, Effector 23, Mantine UI 9
+- **Backend:** NestJS 12, PostgreSQL 17, TypeORM 1.1
+- **Frontend:** React 19, Vite 8, Effector 23, `@effector/router` 1.2, Mantine UI 9
 - **Общий код:** `@kim/shared` — домен и правила валидации из текста ТЗ
 - **Язык:** TypeScript 6.0 (не 7.x — NestJS опирается на legacy-декораторы)
-- **Инструменты:** pnpm workspaces, ESLint + Prettier, lefthook + commitlint
+- **Инструменты:** pnpm workspaces, ESLint (+ `eslint-plugin-effector`) и Prettier, lefthook + commitlint, тесты на встроенном раннере Node
 
 Открытые риски, которые отслеживаем:
 
@@ -169,13 +169,19 @@ MySQL в перечне ПО, так что это самый вероятный
 - [ ] Проверка: фронтенд работает против Python-бэкенда без изменений в коде
 - [ ] Замер: сколько занимает развёртывание этого варианта с нуля
 
-### Часть 3. Frontend: каркас
+### Часть 3. Frontend: каркас — ✅ готово
 
-- [ ] ADR-0006: архитектура фронтенда (слои, роутинг, работа с API) и паттерны Effector (модели, эффекты, статусы)
-- [ ] ADR-0007: Mantine — тема, дизайн-токены, подход к формам
-- [ ] Vite + React + TypeScript, роутинг, защищённые маршруты, layout
-- [ ] API-клиент + единая обработка ошибок, связка с Effector
-- [ ] Общие компоненты форм с отображением ошибок валидации на форме
+- [x] [ADR-0006](./docs/adr/0006-frontend-architecture.md): урезанный FSD, роутинг на `@effector/router`, свои эффекты вместо Farfetched
+- [x] [ADR-0007](./docs/adr/0007-mantine-theme-and-forms.md): тема из руководства по стилю, PT Sans локально, подход к формам
+- [x] Слои `app` / `pages` / `entities` / `shared` с правилом импортов «только вниз»
+- [x] Роутинг и защищённые маршруты с учётом асинхронной проверки сессии
+- [x] API-клиент с типизированной `ApiError` и ошибками по полям; модель сессии на `GET /auth/me`, без localStorage
+- [x] Валидаторы форм из `@kim/shared` — ни одного регулярного выражения в компонентах
+- [x] Страницы входа и регистрации полностью (остальные три — Часть 4)
+- [x] [eslint-plugin-effector](https://eslint.effector.dev) с типизированным линтингом
+- [x] PT Sans из приложения к заданию: TTF → подрезанный WOFF2, 828 КБ → 196 КБ
+- [x] [Офлайн-копия документации роутера](./docs/stack/effector-router/README.md), `pnpm router:docs`
+- [x] 14 тестов фронтенда: правила из ТЗ и модель сессии с подменой `fetch` (всего в проекте 33)
 
 ### Часть 4. Задание 1: минимально необходимый интерфейс
 
@@ -241,6 +247,7 @@ packages/
 docs/
   adr/            # архитектурные решения
   api/            # контракт API — техзадание для Части 2Б
+  db-setup.md     # как поднять базу, в том числе без Docker
   stack/          # вендорённая офлайн-документация по стеку
   er/             # ER-диаграмма (требование задания)
   design/         # требования к дизайну, дизайн-концепция — Часть 5
@@ -290,6 +297,9 @@ pnpm --filter @kim/backend db:seed        # наполнить справочн�
 pnpm --filter @kim/backend db:schema:log  # проверить, что база совпадает с кодом
 pnpm --filter @kim/backend api:spec       # выгрузить контракт API в docs/api
 pnpm test                                 # тесты всех пакетов
+
+pnpm mantine:docs                         # офлайн-документация Mantine
+pnpm router:docs                          # офлайн-документация @effector/router
 ```
 
 Docker нужен только для удобства. Как поднять PostgreSQL без него и как перейти на

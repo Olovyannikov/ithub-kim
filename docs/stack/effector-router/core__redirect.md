@@ -1,0 +1,32 @@
+<!--
+Источник: https://router.effector.dev/core/redirect
+Снято скриптом scripts/fetch-router-docs.sh — не править вручную.
+-->
+
+# redirect ​
+Creates a clock-less Effector target for semantic route redirects.
+tsfunction redirect<T>(
+  config: RedirectConfig<T>,
+): EventCallable<RouteOpenPayload<T>>
+
+RedirectConfig<T> is the exported configuration type. It accepts a path route in to and an optional replace flag.
+
+## Static redirect ​
+tssample({
+  clock: authorization.started,
+  target: redirect({ to: routes.signIn, replace: true }),
+});
+
+## Params and query ​
+Params and query are payload, so dynamic data stays in normal sample composition:
+tssample({
+  clock: legacyUserOpened,
+  fn: ({ id }) => ({
+    params: { id },
+    query: { source: 'legacy' },
+  }),
+  target: redirect({ to: routes.user, replace: true }),
+});
+
+Redirect is not just an alias for route.open: it supersedes a currently held beforeNavigate attempt, then enters normal route matching as a new attempt. This allows an authorization hold to redirect without first calling proceed. Consecutive pre-commit redirects are bounded; a loop is cancelled with a diagnostic after 16 redirects.
+The target deliberately has no clock, source, filter, params, or query config. Those are already Effector composition primitives.

@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Основное начертание подгружаем заранее: иначе первый экран мигает
+         подстановочным шрифтом, а типографика задана руководством по стилю. -->
+    <link
+      rel="preload"
+      href="/fonts/PTSans-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <title>Конференции.РФ</title>
   </head>
   <body>
