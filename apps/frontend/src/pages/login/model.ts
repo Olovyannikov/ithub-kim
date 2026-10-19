@@ -21,21 +21,21 @@ export const LoginPageModel = createModel(() => {
   /** Ошибки сервера, уже разложенные по полям и общему сообщению. */
   const $serverErrors = createStore(NO_SERVER_ERRORS).reset(
     formSubmitted,
-    SessionModel.loginFx.done,
+    SessionModel.loginMutation.finished.success,
   );
 
   sample({
-    clock: SessionModel.loginFx.failData,
-    fn: parseServerError,
+    clock: SessionModel.loginMutation.finished.failure,
+    fn: ({ error }) => parseServerError(error),
     target: $serverErrors,
   });
 
-  sample({ clock: formSubmitted, target: SessionModel.loginFx });
+  sample({ clock: formSubmitted, target: SessionModel.loginMutation.start });
 
   return {
     viewModel: {
       serverErrors: $serverErrors,
-      pending: SessionModel.loginFx.pending,
+      pending: SessionModel.loginMutation.$pending,
       submit: formSubmitted,
       openRegister: routes.register.open,
     },

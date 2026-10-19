@@ -1,5 +1,6 @@
 import { PAYMENT_METHODS, type PaymentMethod } from '@kim/shared';
-import { createEffect, createEvent, createStore, sample } from 'effector';
+import { createMutation } from '@farfetched/core';
+import { createEvent, createStore, sample } from 'effector';
 
 import { RoomsModel } from '../../entities/room';
 import { applicationsApi } from '../../shared/api';
@@ -26,14 +27,19 @@ export const PAYMENT_OPTIONS = PAYMENT_METHODS.map((method) => ({
 export const ApplicationCreatePageModel = createModel(() => {
   const formSubmitted = createEvent<CreateValues>();
 
-  const createApplicationFx = createEffect(
-    (values: { roomId: number; startsAt: string; paymentMethod: PaymentMethod }) =>
+  const createApplicationMutation = createMutation({
+    name: 'createApplication',
+    handler: (values: { roomId: number; startsAt: string; paymentMethod: PaymentMethod }) =>
       applicationsApi.create(values),
-  );
+  });
 
   const $serverErrors = createStore(NO_SERVER_ERRORS).reset(formSubmitted);
 
-  sample({ clock: createApplicationFx.failData, fn: parseServerError, target: $serverErrors });
+  sample({
+    clock: createApplicationMutation.finished.failure,
+    fn: ({ error }) => parseServerError(error),
+    target: $serverErrors,
+  });
 
   /** Справочник помещений подгружается по открытию страницы. */
   sample({ clock: routes.applicationCreate.opened, target: RoomsModel.roomsRequested });
@@ -60,12 +66,12 @@ export const ApplicationCreatePageModel = createModel(() => {
       startsAt: new Date(values.startsAt).toISOString(),
       paymentMethod: values.paymentMethod as PaymentMethod,
     }),
-    target: createApplicationFx,
+    target: createApplicationMutation.start,
   });
 
   /** После отправки заявка уходит администратору, а пользователь — к своим заявкам. */
   sample({
-    clock: createApplicationFx.done,
+    clock: createApplicationMutation.finished.success,
     fn: (): void => undefined,
     target: routes.applications.open,
   });
@@ -75,11 +81,11 @@ export const ApplicationCreatePageModel = createModel(() => {
       roomOptions: RoomsModel.viewModel.roomOptions,
       roomsPending: RoomsModel.viewModel.roomsPending,
       minStartsAt: $minStartsAt,
-      pending: createApplicationFx.pending,
+      pending: createApplicationMutation.$pending,
       serverErrors: $serverErrors,
       submit: formSubmitted,
       openApplications: routes.applications.open,
     },
-    __: { createApplicationFx, $serverErrors },
+    __: { createApplicationMutation: createApplicationMutation, $serverErrors },
   };
 });

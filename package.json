@@ -19,6 +19,7 @@
     "test": "pnpm -r test",
     "e2e": "node scripts/e2e.mjs",
     "images": "node scripts/optimize-images.mjs",
+    "erd": "node scripts/generate-erd.mjs",
     "shared:python": "node scripts/generate-python-shared.mjs",
     "py:install": "bash scripts/python-setup.sh",
     "py:dev": "apps/backend-py/.venv/bin/python -m uvicorn app.main:app --app-dir apps/backend-py --port ${PY_API_PORT:-3001} --reload",

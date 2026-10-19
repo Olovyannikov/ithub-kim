@@ -19,21 +19,21 @@ export const RegisterPageModel = createModel(() => {
 
   const $serverErrors = createStore(NO_SERVER_ERRORS).reset(
     formSubmitted,
-    SessionModel.registerFx.done,
+    SessionModel.registerMutation.finished.success,
   );
 
   sample({
-    clock: SessionModel.registerFx.failData,
-    fn: parseServerError,
+    clock: SessionModel.registerMutation.finished.failure,
+    fn: ({ error }) => parseServerError(error),
     target: $serverErrors,
   });
 
-  sample({ clock: formSubmitted, target: SessionModel.registerFx });
+  sample({ clock: formSubmitted, target: SessionModel.registerMutation.start });
 
   return {
     viewModel: {
       serverErrors: $serverErrors,
-      pending: SessionModel.registerFx.pending,
+      pending: SessionModel.registerMutation.$pending,
       submit: formSubmitted,
       openLogin: routes.login.open,
     },

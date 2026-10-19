@@ -1,0 +1,58 @@
+digraph ERD {
+  graph [rankdir=LR, splines=polyline, nodesep=0.8, ranksep=2.2, bgcolor="white"];
+  node [shape=plaintext, fontname="PT Sans,Helvetica", fontsize=11];
+  edge [color="#007bff", penwidth=1.4, fontname="PT Sans,Helvetica", fontsize=9];
+
+  "applications" [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#6c757d">
+      <TR><TD BGCOLOR="#0d47a1" COLSPAN="3"><FONT COLOR="#ffffff"><B>applications</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="id"><B>id</B></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">int</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#0d47a1">PK</FONT></TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="user_id"><B>user_id</B></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">int</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#0d47a1">FK</FONT></TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="room_id"><B>room_id</B></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">int</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#0d47a1">FK</FONT></TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="starts_at">starts_at</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">timestamptz</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="payment_method">payment_method</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(32)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="status">status</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(32)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="created_at">created_at</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">timestamptz</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="updated_at">updated_at</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">timestamptz</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+
+  "reviews" [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#6c757d">
+      <TR><TD BGCOLOR="#0d47a1" COLSPAN="3"><FONT COLOR="#ffffff"><B>reviews</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="id"><B>id</B></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">int</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#0d47a1">PK</FONT></TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="application_id"><B>application_id</B></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">int</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#0d47a1">FK UQ</FONT></TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="rating">rating</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">smallint</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="text">text</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">text</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="created_at">created_at</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">timestamptz</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+
+  "rooms" [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#6c757d">
+      <TR><TD BGCOLOR="#0d47a1" COLSPAN="3"><FONT COLOR="#ffffff"><B>rooms</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="id"><B>id</B></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">int</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#0d47a1">PK</FONT></TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="name">name</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(255)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="kind">kind</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(32)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="capacity">capacity</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">int</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="description">description</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">text</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="image_url">image_url</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(512)</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="created_at">created_at</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">timestamptz</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+
+  "users" [label=<
+    <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#6c757d">
+      <TR><TD BGCOLOR="#0d47a1" COLSPAN="3"><FONT COLOR="#ffffff"><B>users</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="id"><B>id</B></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">int</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#0d47a1">PK</FONT></TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="login"><B>login</B></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(64)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#0d47a1">UQ</FONT></TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="password_hash">password_hash</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(255)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="full_name">full_name</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(255)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="phone">phone</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(15)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="email">email</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(255)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="role">role</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">varchar(16)</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#f8f9fa" ALIGN="LEFT" PORT="created_at">created_at</TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"><FONT COLOR="#6c757d">timestamptz</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#f8f9fa" ALIGN="LEFT"> </TD></TR>
+      <TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" PORT="updated_at">updated_at</TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"><FONT COLOR="#6c757d">timestamptz</FONT> <FONT COLOR="#6c757d">NOT NULL</FONT></TD><TD BGCOLOR="#ffffff" ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+
+  "reviews":"application_id" -> "applications":"id" [xlabel="ON DELETE CASCADE", dir=back, arrowtail=crow, arrowhead=none];
+  "applications":"user_id" -> "users":"id" [xlabel="ON DELETE CASCADE", dir=back, arrowtail=crow, arrowhead=none];
+  "applications":"room_id" -> "rooms":"id" [xlabel="ON DELETE RESTRICT", dir=back, arrowtail=crow, arrowhead=none];
+}

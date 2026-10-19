@@ -65,13 +65,18 @@ NestJS (CJS) и Vite (ESM с интеропом). Поэтому в `apps/fronte
 
 ## Рабочие скиллы
 
-Установлены два набора скиллов (глобально, в профиле пользователя — в репозитории их нет):
+Скиллы, относящиеся к **этому проекту**, лежат в [`.claude/skills`](./.claude/skills) и
+едут вместе с репозиторием — на другой машине они окажутся на месте сами:
 
-- **superpowers** (`obra/superpowers`, плагин v7.0.0) — процессные скиллы: `brainstorming`,
-  `writing-plans`, `executing-plans`, `test-driven-development`, `systematic-debugging`,
-  `verification-before-completion`, `requesting-code-review`, `using-git-worktrees` и другие.
-- **effector-ecosystem** и **effector-fsd** (`demark-pro/skills`) — Effector, Farfetched,
-  Atomic Router и размещение кода по слоям Feature-Sliced Design.
+- **effector-ecosystem** — Effector, `effector-react`, Farfetched, контракты, формы, тесты;
+- **effector-fsd** — Feature-Sliced Design для Effector: слои, срезы, публичные API.
+
+Процессные скиллы остаются в профиле пользователя: они не про этот проект, а про то, как
+вообще работать.
+
+**superpowers** (`obra/superpowers`, плагин v7.0.0) — `brainstorming`, `writing-plans`,
+`executing-plans`, `test-driven-development`, `systematic-debugging`,
+`verification-before-completion`, `requesting-code-review`, `using-git-worktrees`.
 
 Как их применять в этом проекте:
 

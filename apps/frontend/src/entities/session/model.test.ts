@@ -10,8 +10,15 @@ import { SessionModel } from './model';
  * глобального fetch, поэтому проверяется вся цепочка: api-клиент, разбор
  * ошибок и переходы состояния сессии.
  */
-const { $user, $isAuthenticated, $isAdmin, $sessionChecked, fetchSessionFx, loginFx, logoutFx } =
-  SessionModel;
+const {
+  $user,
+  $isAuthenticated,
+  $isAdmin,
+  $sessionChecked,
+  sessionQuery,
+  loginMutation,
+  logoutMutation,
+} = SessionModel;
 
 const realFetch = globalThis.fetch;
 
@@ -45,7 +52,10 @@ describe('модель сессии', () => {
     stubFetch(() => json(200, USER));
 
     const scope = fork();
-    await allSettled(loginFx, { scope, params: { login: 'ivanov01', password: 'StrongPass1' } });
+    await allSettled(loginMutation.start, {
+      scope,
+      params: { login: 'ivanov01', password: 'StrongPass1' },
+    });
 
     expect(scope.getState($user)).toEqual(USER);
     expect(scope.getState($isAuthenticated)).toBe(true);
@@ -56,7 +66,10 @@ describe('модель сессии', () => {
     stubFetch(() => json(200, { ...USER, login: 'Conf2027', role: 'admin' }));
 
     const scope = fork();
-    await allSettled(loginFx, { scope, params: { login: 'Conf2027', password: 'Demo77' } });
+    await allSettled(loginMutation.start, {
+      scope,
+      params: { login: 'Conf2027', password: 'Demo77' },
+    });
 
     expect(scope.getState($isAdmin)).toBe(true);
   });
@@ -65,7 +78,7 @@ describe('модель сессии', () => {
     stubFetch(() => json(401, { statusCode: 401, message: 'Необходимо войти в систему' }));
 
     const scope = fork();
-    await allSettled(fetchSessionFx, { scope });
+    await allSettled(sessionQuery.start, { scope, params: undefined });
 
     expect(scope.getState($user)).toBe(null);
     expect(scope.getState($isAuthenticated)).toBe(false);
@@ -87,12 +100,15 @@ describe('модель сессии', () => {
     // createWatch, а не .watch: подписка привязана к конкретному scope,
     // иначе тест реагировал бы на события из других scope.
     const unwatch = createWatch({
-      unit: loginFx.failData,
+      unit: loginMutation.finished.failure,
       scope,
-      fn: (error) => failures.push(error),
+      fn: ({ error }) => failures.push(error),
     });
 
-    await allSettled(loginFx, { scope, params: { login: 'ivanov01', password: 'wrong' } });
+    await allSettled(loginMutation.start, {
+      scope,
+      params: { login: 'ivanov01', password: 'wrong' },
+    });
     unwatch();
 
     expect(failures.length).toBe(1);
@@ -112,12 +128,15 @@ describe('модель сессии', () => {
     const scope = fork();
     const failures: unknown[] = [];
     const unwatch = createWatch({
-      unit: loginFx.failData,
+      unit: loginMutation.finished.failure,
       scope,
-      fn: (error) => failures.push(error),
+      fn: ({ error }) => failures.push(error),
     });
 
-    await allSettled(loginFx, { scope, params: { login: 'ivanov01', password: 'StrongPass1' } });
+    await allSettled(loginMutation.start, {
+      scope,
+      params: { login: 'ivanov01', password: 'StrongPass1' },
+    });
     unwatch();
 
     const error = failures[0];
@@ -133,10 +152,13 @@ describe('модель сессии', () => {
     );
 
     const scope = fork();
-    await allSettled(loginFx, { scope, params: { login: 'ivanov01', password: 'StrongPass1' } });
+    await allSettled(loginMutation.start, {
+      scope,
+      params: { login: 'ivanov01', password: 'StrongPass1' },
+    });
     expect(scope.getState($isAuthenticated)).toBe(true);
 
-    await allSettled(logoutFx, { scope });
+    await allSettled(logoutMutation.start, { scope, params: undefined });
 
     expect(scope.getState($user)).toBe(null);
     expect(scope.getState($isAuthenticated)).toBe(false);

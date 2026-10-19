@@ -48,12 +48,12 @@ createAction({
     routes.login.opened,
     routes.register.opened,
     // Проверка сессии завершилась — можно принимать решение.
-    SessionModel.fetchSessionFx.finally,
+    SessionModel.sessionQuery.finished.finally,
     // Вход и регистрация: пользователь уже на месте, его надо увести дальше.
-    SessionModel.loginFx.done,
-    SessionModel.registerFx.done,
+    SessionModel.loginMutation.finished.success,
+    SessionModel.registerMutation.finished.success,
     // Выход и протухшая сессия: наоборот, надо вернуть на вход.
-    SessionModel.logoutFx.done,
+    SessionModel.logoutMutation.finished.success,
     sessionExpired,
   ],
   source: {

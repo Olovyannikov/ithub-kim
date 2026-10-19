@@ -4,7 +4,8 @@ import {
   type ApplicationDto,
   type ApplicationStatus,
 } from '@kim/shared';
-import { combine, createEffect, createEvent, createStore, sample } from 'effector';
+import { createMutation, createQuery } from '@farfetched/core';
+import { combine, createEvent, createStore, sample } from 'effector';
 import { debounce } from 'patronum';
 
 import { RoomsModel } from '../../entities/room';
@@ -61,34 +62,51 @@ export const AdminPageModel = createModel(() => {
   sample({ clock: filtersChanged, target: $filters });
   sample({ clock: pageChanged, target: $page });
 
-  const fetchAllFx = createEffect(applicationsApi.all);
+  const applicationsQuery = createQuery({ name: 'allApplications', handler: applicationsApi.all });
 
-  const updateStatusFx = createEffect(({ id, status }: { id: number; status: ApplicationStatus }) =>
-    applicationsApi.updateStatus(id, { status }),
-  );
+  const updateStatusMutation = createMutation({
+    name: 'updateStatus',
+    handler: ({ id, status }: { id: number; status: ApplicationStatus }) =>
+      applicationsApi.updateStatus(id, { status }),
+  });
 
   const $items = createStore<ApplicationDto[]>([]);
   const $total = createStore(0);
-  const $updatingId = createStore<number | null>(null).reset(updateStatusFx.finally);
-  const $error = createStore<string | null>(null).reset(fetchAllFx, updateStatusFx);
+  const $updatingId = createStore<number | null>(null).reset(updateStatusMutation.finished.finally);
+  const $error = createStore<string | null>(null).reset(
+    applicationsQuery.started,
+    updateStatusMutation.started,
+  );
 
-  sample({ clock: fetchAllFx.doneData, fn: (page) => page.items, target: $items });
-  sample({ clock: fetchAllFx.doneData, fn: (page) => page.total, target: $total });
+  sample({
+    clock: applicationsQuery.finished.success,
+    fn: ({ result }) => result.items,
+    target: $items,
+  });
+  sample({
+    clock: applicationsQuery.finished.success,
+    fn: ({ result }) => result.total,
+    target: $total,
+  });
 
   // Сервер возвращает обновлённую заявку — подменяем её на месте, без
   // перезагрузки всего списка.
   sample({
-    clock: updateStatusFx.doneData,
+    clock: updateStatusMutation.finished.success,
     source: $items,
-    fn: (items, updated) => items.map((item) => (item.id === updated.id ? updated : item)),
+    fn: (items, { result }) => items.map((item) => (item.id === result.id ? result : item)),
     target: $items,
   });
 
-  sample({ clock: updateStatusFx, fn: ({ id }) => id, target: $updatingId });
+  sample({
+    clock: updateStatusMutation.started,
+    fn: ({ params }) => params.id,
+    target: $updatingId,
+  });
 
   sample({
-    clock: [fetchAllFx.failData, updateStatusFx.failData],
-    fn: (error) => parseServerError(error).message,
+    clock: [applicationsQuery.finished.failure, updateStatusMutation.finished.failure],
+    fn: ({ error }) => parseServerError(error).message,
     target: $error,
   });
 
@@ -109,7 +127,7 @@ export const AdminPageModel = createModel(() => {
       filters.to !== '',
   );
 
-  const $viewState = combine($items, fetchAllFx.pending, $error, (items, pending, error) =>
+  const $viewState = combine($items, applicationsQuery.$pending, $error, (items, pending, error) =>
     toListViewState({ items, pending, error }),
   );
 
@@ -139,10 +157,10 @@ export const AdminPageModel = createModel(() => {
   sample({
     clock: [routes.admin.opened, filtersSettled, filtersReset, pageChanged],
     source: $query,
-    target: fetchAllFx,
+    target: applicationsQuery.start,
   });
 
-  sample({ clock: statusChangeRequested, target: updateStatusFx });
+  sample({ clock: statusChangeRequested, target: updateStatusMutation.start });
 
   return {
     viewModel: {
@@ -159,6 +177,6 @@ export const AdminPageModel = createModel(() => {
       changePage: pageChanged,
       changeStatus: statusChangeRequested,
     },
-    __: { $items, $error, $query, fetchAllFx, updateStatusFx },
+    __: { $items, $error, $query, applicationsQuery, updateStatusMutation },
   };
 });
