@@ -19,6 +19,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/node_modules/**',
       'docs/stack/mantine/**',
+      'apps/backend-py/**',
     ],
   },
 

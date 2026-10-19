@@ -1,0 +1,16 @@
+# Запасной бэкенд на Python/MySQL (ADR-0011).
+#
+# Для офлайн-площадки колёса складываются заранее:
+#   pip download -r requirements.txt -d wheels
+# и ставятся без сети:
+#   pip install --no-index --find-links=wheels -r requirements.txt
+fastapi==0.148.0
+uvicorn[standard]==0.41.0
+sqlalchemy==2.0.46
+pymysql==1.1.2
+# Нужен PyMySQL для способа аутентификации caching_sha2_password, который в
+# MySQL 8+ включён по умолчанию. Без него соединение не устанавливается.
+cryptography==50.0.2
+pydantic[email]==2.13.1
+pyjwt==2.12.1
+python-multipart==0.0.22

@@ -19,5 +19,31 @@ services:
       timeout: 5s
       retries: 10
 
+  # База для запасного бэкенда на Python (ADR-0011). Поднимается отдельно:
+  #   docker compose up -d mysql
+  # В перечне ПО из КИМ названа именно MySQL, поэтому план отхода проверяется
+  # на ней, а не на PostgreSQL.
+  mysql:
+    image: mysql:8.4
+    container_name: kim-mysql
+    restart: unless-stopped
+    profiles: ['fallback']
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-kim}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-conferences}
+      MYSQL_USER: ${MYSQL_USER:-kim}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-kim}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - '${MYSQL_PORT:-3306}:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-p${MYSQL_ROOT_PASSWORD:-kim}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
 volumes:
   postgres-data:
+  mysql-data:
