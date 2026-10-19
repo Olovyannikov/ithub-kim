@@ -14,6 +14,7 @@ import {
 import { useForm } from '@mantine/form';
 import { IconCalendarPlus, IconMessage2Plus, IconSend } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
+import { match } from 'ts-pattern';
 
 import { ApplicationCard } from '../../entities/application';
 import { validators } from '../../shared/forms';
@@ -21,12 +22,10 @@ import { plural } from '../../shared/lib';
 import { routes } from '../../shared/routes';
 import {
   $applications,
-  $isEmpty,
-  $loadError,
-  $pending,
   $reviewErrors,
   $reviewingId,
   $reviewPending,
+  $viewState,
   reviewFormClosed,
   reviewFormOpened,
   reviewSubmitted,
@@ -37,9 +36,7 @@ import {
 export function ApplicationsPage() {
   const [
     applications,
-    pending,
-    isEmpty,
-    loadError,
+    viewState,
     reviewingId,
     reviewErrors,
     reviewPending,
@@ -49,9 +46,7 @@ export function ApplicationsPage() {
     openCreate,
   ] = useUnit([
     $applications,
-    $pending,
-    $isEmpty,
-    $loadError,
+    $viewState,
     $reviewingId,
     $reviewErrors,
     $reviewPending,
@@ -85,58 +80,63 @@ export function ApplicationsPage() {
         </Button>
       </Group>
 
-      {loadError ? (
-        <Alert color="red" variant="light">
-          {loadError}
-        </Alert>
-      ) : null}
-
-      {pending && applications.length === 0 ? (
-        <Group justify="center" py="xl">
-          <Loader />
-        </Group>
-      ) : null}
-
-      {isEmpty && !loadError ? (
-        <Card withBorder padding="xl" bg="white">
-          <Stack gap="sm" align="flex-start">
-            <Title order={3}>Заявок пока нет</Title>
-            <Text c="dimmed">
-              Выберите помещение для конференции и укажите удобное время — заявка поступит
-              администратору портала.
-            </Text>
-            <Button
-              leftSection={<IconCalendarPlus size={18} stroke={1.8} />}
-              onClick={() => openCreate()}
-            >
-              Сформировать заявку
-            </Button>
+      {/*
+        Состояние страницы — одно значение из модели, а не четыре независимых
+        условия. `.exhaustive()` не даст забыть вариант, если он появится.
+      */}
+      {match(viewState)
+        .with({ kind: 'loading' }, () => (
+          <Group justify="center" py="xl">
+            <Loader />
+          </Group>
+        ))
+        .with({ kind: 'error' }, ({ message }) => (
+          <Alert color="red" variant="light">
+            {message}
+          </Alert>
+        ))
+        .with({ kind: 'empty' }, () => (
+          <Card withBorder padding="xl" bg="white">
+            <Stack gap="sm" align="flex-start">
+              <Title order={3}>Заявок пока нет</Title>
+              <Text c="dimmed">
+                Выберите помещение для конференции и укажите удобное время — заявка поступит
+                администратору портала.
+              </Text>
+              <Button
+                leftSection={<IconCalendarPlus size={18} stroke={1.8} />}
+                onClick={() => openCreate()}
+              >
+                Сформировать заявку
+              </Button>
+            </Stack>
+          </Card>
+        ))
+        .with({ kind: 'list' }, ({ items }) => (
+          <Stack gap="md">
+            {items.map((application, index) => (
+              <ApplicationCard
+                key={application.id}
+                application={application}
+                eagerImage={index === 0}
+                actions={
+                  // Право на отзыв считает сервер: Задание 2, п. 3 — только
+                  // после завершения мероприятия.
+                  application.canLeaveReview ? (
+                    <Button
+                      variant="light"
+                      leftSection={<IconMessage2Plus size={18} stroke={1.8} />}
+                      onClick={() => openReview(application.id)}
+                    >
+                      Оставить отзыв
+                    </Button>
+                  ) : null
+                }
+              />
+            ))}
           </Stack>
-        </Card>
-      ) : null}
-
-      <Stack gap="md">
-        {applications.map((application, index) => (
-          <ApplicationCard
-            key={application.id}
-            application={application}
-            eagerImage={index === 0}
-            actions={
-              // Право на отзыв считает сервер: Задание 2, п. 3 — только после
-              // завершения мероприятия.
-              application.canLeaveReview ? (
-                <Button
-                  variant="light"
-                  leftSection={<IconMessage2Plus size={18} stroke={1.8} />}
-                  onClick={() => openReview(application.id)}
-                >
-                  Оставить отзыв
-                </Button>
-              ) : null
-            }
-          />
-        ))}
-      </Stack>
+        ))
+        .exhaustive()}
 
       <Modal
         opened={reviewingId !== null}

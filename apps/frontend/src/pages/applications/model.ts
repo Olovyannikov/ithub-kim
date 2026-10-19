@@ -3,6 +3,7 @@ import { combine, createEffect, createEvent, createStore, sample } from 'effecto
 
 import { applicationsApi } from '../../shared/api';
 import { NO_SERVER_ERRORS, parseServerError } from '../../shared/forms';
+import { toListViewState } from '../../shared/lib';
 import { routes } from '../../shared/routes';
 
 /**
@@ -74,10 +75,11 @@ $applications.on(addReviewFx.doneData, (items, updated) =>
 
 sample({ clock: addReviewFx.done, target: reviewFormClosed });
 
-export const $hasApplications = $applications.map((items) => items.length > 0);
-
-export const $isEmpty = combine(
-  $applications,
-  $pending,
-  (items, pending) => !pending && items.length === 0,
+/**
+ * Состояние страницы одним значением: загрузка, ошибка, пустота или список.
+ * Решение принимается здесь, компонент только сопоставляет вариант с
+ * разметкой (ADR-0006).
+ */
+export const $viewState = combine($applications, $pending, $loadError, (items, pending, error) =>
+  toListViewState({ items, pending, error }),
 );

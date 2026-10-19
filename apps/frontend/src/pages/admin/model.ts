@@ -9,6 +9,7 @@ import { combine, createEffect, createEvent, createStore, sample } from 'effecto
 import { roomsRequested } from '../../entities/room';
 import { applicationsApi } from '../../shared/api';
 import { parseServerError } from '../../shared/forms';
+import { toListViewState } from '../../shared/lib';
 import { routes } from '../../shared/routes';
 
 /**
@@ -85,10 +86,8 @@ export const $error = createStore<string | null>(null)
 
 export const $pageCount = $total.map((total) => Math.max(1, Math.ceil(total / PAGE_SIZE)));
 
-export const $isEmpty = combine(
-  $items,
-  $pending,
-  (items, pending) => !pending && items.length === 0,
+export const $viewState = combine($items, $pending, $error, (items, pending, error) =>
+  toListViewState({ items, pending, error }),
 );
 
 /** Запрос собирается из фильтров и номера страницы в одном месте. */

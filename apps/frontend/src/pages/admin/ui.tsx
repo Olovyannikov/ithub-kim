@@ -15,20 +15,18 @@ import {
 } from '@mantine/core';
 import { IconFilterOff, IconSearch } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
+import { match } from 'ts-pattern';
 
 import { ApplicationCard } from '../../entities/application';
 import { $roomOptions } from '../../entities/room';
 import { plural } from '../../shared/lib';
 import {
-  $error,
   $filters,
-  $isEmpty,
-  $items,
   $page,
   $pageCount,
-  $pending,
   $total,
   $updatingId,
+  $viewState,
   ASSIGNABLE_STATUS_OPTIONS,
   filtersChanged,
   filtersReset,
@@ -40,14 +38,11 @@ import {
 /** Задание 1, п. 5 и Задание 2, п. 5: панель администратора. */
 export function AdminPage() {
   const [
-    items,
+    viewState,
     total,
     filters,
     page,
     pageCount,
-    pending,
-    isEmpty,
-    error,
     updatingId,
     roomOptions,
     changeFilters,
@@ -55,14 +50,11 @@ export function AdminPage() {
     changePage,
     changeStatus,
   ] = useUnit([
-    $items,
+    $viewState,
     $total,
     $filters,
     $page,
     $pageCount,
-    $pending,
-    $isEmpty,
-    $error,
     $updatingId,
     $roomOptions,
     filtersChanged,
@@ -158,55 +150,57 @@ export function AdminPage() {
         </Stack>
       </Card>
 
-      {error ? (
-        <Alert color="red" variant="light">
-          {error}
-        </Alert>
-      ) : null}
-
-      {pending && items.length === 0 ? (
-        <Group justify="center" py="xl">
-          <Loader />
-        </Group>
-      ) : null}
-
-      {isEmpty && !error ? (
-        <Card withBorder padding="xl" bg="white">
-          <Text c="dimmed">
-            {hasFilters
-              ? 'По выбранным фильтрам заявок не нашлось.'
-              : 'Заявок от пользователей пока нет.'}
-          </Text>
-        </Card>
-      ) : null}
-
-      <Stack gap="md">
-        {items.map((application, index) => (
-          <ApplicationCard
-            key={application.id}
-            application={application}
-            withAuthor
-            eagerImage={index === 0}
-            actions={
-              // Задание 1, п. 5: администратор меняет статус на «Мероприятие
-              // назначено» или «Завершено». Статус «Новая» вручную не ставится.
-              <Select
-                aria-label={`Статус заявки №${application.id}`}
-                placeholder="Сменить статус"
-                data={ASSIGNABLE_STATUS_OPTIONS}
-                value={null}
-                disabled={updatingId === application.id}
-                w={240}
-                onChange={(value) => {
-                  if (value) {
-                    changeStatus({ id: application.id, status: value as ApplicationStatus });
-                  }
-                }}
+      {match(viewState)
+        .with({ kind: 'loading' }, () => (
+          <Group justify="center" py="xl">
+            <Loader />
+          </Group>
+        ))
+        .with({ kind: 'error' }, ({ message }) => (
+          <Alert color="red" variant="light">
+            {message}
+          </Alert>
+        ))
+        .with({ kind: 'empty' }, () => (
+          <Card withBorder padding="xl" bg="white">
+            <Text c="dimmed">
+              {hasFilters
+                ? 'По выбранным фильтрам заявок не нашлось.'
+                : 'Заявок от пользователей пока нет.'}
+            </Text>
+          </Card>
+        ))
+        .with({ kind: 'list' }, ({ items }) => (
+          <Stack gap="md">
+            {items.map((application, index) => (
+              <ApplicationCard
+                key={application.id}
+                application={application}
+                withAuthor
+                eagerImage={index === 0}
+                actions={
+                  // Задание 1, п. 5: администратор меняет статус на
+                  // «Мероприятие назначено» или «Завершено». Статус «Новая»
+                  // вручную не ставится.
+                  <Select
+                    aria-label={`Статус заявки №${application.id}`}
+                    placeholder="Сменить статус"
+                    data={ASSIGNABLE_STATUS_OPTIONS}
+                    value={null}
+                    disabled={updatingId === application.id}
+                    w={240}
+                    onChange={(value) => {
+                      if (value) {
+                        changeStatus({ id: application.id, status: value as ApplicationStatus });
+                      }
+                    }}
+                  />
+                }
               />
-            }
-          />
-        ))}
-      </Stack>
+            ))}
+          </Stack>
+        ))
+        .exhaustive()}
 
       {pageCount > 1 ? (
         <Group justify="center">
