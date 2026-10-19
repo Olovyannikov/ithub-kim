@@ -7,7 +7,7 @@
  * Node 22+ — ноль новых зависимостей.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -192,7 +192,16 @@ export async function openPage(browser) {
       });
 
       if (result.exceptionDetails) {
-        throw new Error(result.exceptionDetails.text ?? 'Ошибка в выражении');
+        const details = result.exceptionDetails;
+        // В `text` почти всегда лежит бесполезное «Uncaught» — настоящее
+        // сообщение приходит в описании исключения.
+        const message =
+          details.exception?.description ??
+          details.exception?.value ??
+          details.text ??
+          'Ошибка в выражении';
+
+        throw new Error(String(message).split('\n')[0]);
       }
 
       return result.result.value;
@@ -227,6 +236,88 @@ export async function openPage(browser) {
       }
     },
 
+    /**
+     * Выбирает значение в Mantine Select: открывает список и щёлкает по
+     * варианту. Именно так это делает пользователь — значение нельзя просто
+     * записать в input, компонент его не примет.
+     */
+    async selectByLabel(label, optionText) {
+      const opened = await this.evaluate(`(() => {
+        const labels = Array.from(document.querySelectorAll('label'));
+        const target = labels.find((l) => l.textContent.replace(/\\s*\\*$/, '').trim() === ${JSON.stringify(label)});
+        if (!target) return false;
+        const id = target.getAttribute('for');
+        const input = id ? document.getElementById(id) : null;
+        if (!input) return false;
+        input.focus();
+        input.click();
+        return true;
+      })()`);
+
+      if (!opened) {
+        throw new Error(`Не найден список с подписью «${label}»`);
+      }
+
+      await sleep(250);
+
+      const picked = await this.evaluate(`(() => {
+        // Mantine держит в DOM варианты всех списков сразу, поэтому ищем
+        // только среди видимых: открыт ровно один список.
+        const options = Array.from(document.querySelectorAll('[role="option"]'))
+          .filter((o) => o.getClientRects().length > 0);
+        const target = options.find((o) => o.textContent.includes(${JSON.stringify(optionText)}));
+        if (!target) return options.length === 0 ? 'closed' : 'missing';
+        target.click();
+        return 'ok';
+      })()`);
+
+      if (picked !== 'ok') {
+        throw new Error(
+          picked === 'closed'
+            ? `Список «${label}» не открылся`
+            : `В открытом списке «${label}» нет варианта «${optionText}»`,
+        );
+      }
+
+      await sleep(250);
+    },
+
+    /** То же, но список найден по placeholder — для полей без тега label. */
+    async selectByPlaceholder(placeholder, optionText) {
+      const opened = await this.evaluate(`(() => {
+        const input = document.querySelector('input[placeholder=' + JSON.stringify(${JSON.stringify(placeholder)}) + ']');
+        if (!input) return false;
+        input.focus();
+        input.click();
+        return true;
+      })()`);
+
+      if (!opened) {
+        throw new Error(`Не найден список с placeholder «${placeholder}»`);
+      }
+
+      await sleep(250);
+
+      const picked = await this.evaluate(`(() => {
+        const options = Array.from(document.querySelectorAll('[role="option"]'))
+          .filter((o) => o.getClientRects().length > 0);
+        const target = options.find((o) => o.textContent.trim() === ${JSON.stringify(optionText)});
+        if (!target) return options.length === 0 ? 'closed' : 'missing';
+        target.click();
+        return 'ok';
+      })()`);
+
+      if (picked !== 'ok') {
+        throw new Error(
+          picked === 'closed'
+            ? `Список «${placeholder}» не открылся`
+            : `В открытом списке «${placeholder}» нет варианта «${optionText}»`,
+        );
+      }
+
+      await sleep(600);
+    },
+
     async clickByText(text) {
       const ok = await this.evaluate(`(() => {
         const nodes = Array.from(document.querySelectorAll('button, a'));
@@ -241,6 +332,18 @@ export async function openPage(browser) {
       }
 
       await sleep(600);
+    },
+
+    /** Снимок страницы целиком — для визуальной проверки и для Части 5. */
+    async screenshot(path, { fullPage = true } = {}) {
+      const { data } = await call('Page.captureScreenshot', {
+        format: 'png',
+        captureBeyondViewport: fullPage,
+      });
+
+      writeFileSync(path, Buffer.from(data, 'base64'));
+
+      return path;
     },
 
     async waitForText(needle, timeoutMs = 10_000) {

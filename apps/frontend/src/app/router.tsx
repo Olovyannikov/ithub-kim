@@ -1,44 +1,23 @@
 import { createRouteView, createRoutesView, RouterProvider } from '@effector/router-react';
+import { Card, Stack, Text, Title } from '@mantine/core';
 
+import { AdminPage } from '../pages/admin';
+import { ApplicationCreatePage } from '../pages/application-create';
+import { ApplicationsPage } from '../pages/applications';
 import { LoginPage } from '../pages/login';
 import { RegisterPage } from '../pages/register';
-import { StubPage } from '../pages/stub';
 import { router, routes } from '../shared/routes';
 import { Layout } from './layout';
 
-/** Страницы Задания 1, которые реализуются в Части 4. */
-function ApplicationsPage() {
-  return (
-    <StubPage
-      title="Мои заявки"
-      part="Части 4"
-      description="Просмотр ранее оставленных заявок и отзыв о качестве проведённого мероприятия."
-    />
-  );
-}
-
-function ApplicationCreatePage() {
-  return (
-    <StubPage
-      title="Новая заявка"
-      part="Части 4"
-      description="Выбор помещения, даты начала конференции и способа оплаты."
-    />
-  );
-}
-
-function AdminPage() {
-  return (
-    <StubPage
-      title="Панель администратора"
-      part="Части 4"
-      description="Все заявки зарегистрированных пользователей и смена статуса заявки."
-    />
-  );
-}
-
 function NotFoundPage() {
-  return <StubPage title="Страница не найдена" part="Части 4" description="Такого адреса нет." />;
+  return (
+    <Card withBorder padding="xl" bg="white">
+      <Stack gap="sm">
+        <Title order={2}>Страница не найдена</Title>
+        <Text c="dimmed">Проверьте адрес или вернитесь к своим заявкам.</Text>
+      </Stack>
+    </Card>
+  );
 }
 
 const RoutesView = createRoutesView({

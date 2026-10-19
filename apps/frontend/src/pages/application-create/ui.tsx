@@ -1,0 +1,109 @@
+import { Alert, Button, Card, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useUnit } from 'effector-react';
+
+import { $roomOptions, $roomsPending } from '../../entities/room';
+import { validators } from '../../shared/forms';
+import { toDateTimeLocalValue } from '../../shared/lib';
+import { routes } from '../../shared/routes';
+import {
+  $pending,
+  $serverErrors,
+  formSubmitted,
+  PAYMENT_OPTIONS,
+  type CreateValues,
+} from './model';
+
+/** Задание 1, п. 4: страница формирования заявки. */
+export function ApplicationCreatePage() {
+  const [roomOptions, roomsPending, pending, serverErrors, submit, openApplications] = useUnit([
+    $roomOptions,
+    $roomsPending,
+    $pending,
+    $serverErrors,
+    formSubmitted,
+    routes.applications.open,
+  ]);
+
+  const form = useForm<CreateValues>({
+    initialValues: { roomId: null, startsAt: '', paymentMethod: null },
+    validate: {
+      roomId: validators.room,
+      startsAt: validators.startsAt,
+      paymentMethod: validators.paymentMethod,
+    },
+    validateInputOnBlur: true,
+  });
+
+  // Раньше текущего момента выбрать нельзя — то же правило проверяет сервер.
+  const minDateTime = toDateTimeLocalValue(new Date());
+
+  return (
+    <Card withBorder padding="xl" maw={620} mx="auto" bg="white">
+      <form
+        onSubmit={form.onSubmit((values) => {
+          submit(values);
+        })}
+        noValidate
+      >
+        <Stack gap="md">
+          <Stack gap={2}>
+            <Title order={1}>Новая заявка</Title>
+            <Text c="dimmed">
+              Выберите помещение для конференции, укажите желаемое время начала и способ оплаты.
+            </Text>
+          </Stack>
+
+          {serverErrors.message ? (
+            <Alert color="red" variant="light">
+              {serverErrors.message}
+            </Alert>
+          ) : null}
+
+          {/*
+            Задание 2, п. 4: «предложите пользователю выбрать опции из
+            раскрывающегося списка» — вместо ручного ввода названия помещения.
+          */}
+          <Select
+            label="Помещение"
+            placeholder={roomsPending ? 'Загружаем справочник…' : 'Выберите помещение'}
+            data={roomOptions}
+            searchable
+            disabled={roomsPending}
+            withAsterisk
+            {...form.getInputProps('roomId')}
+            error={form.errors.roomId ?? serverErrors.fields.roomId}
+          />
+
+          <TextInput
+            type="datetime-local"
+            label="Начало конференции"
+            min={minDateTime}
+            withAsterisk
+            {...form.getInputProps('startsAt')}
+            error={form.errors.startsAt ?? serverErrors.fields.startsAt}
+          />
+
+          <Select
+            label="Способ оплаты"
+            placeholder="Выберите способ оплаты"
+            data={PAYMENT_OPTIONS}
+            withAsterisk
+            {...form.getInputProps('paymentMethod')}
+            error={form.errors.paymentMethod ?? serverErrors.fields.paymentMethod}
+          />
+
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => openApplications()}>
+              Отмена
+            </Button>
+            {/* Текст кнопки задан ТЗ — Задание 1, п. 4. */}
+            <Button type="submit" loading={pending}>
+              Отправить
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Card>
+  );
+}
