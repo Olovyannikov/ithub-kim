@@ -66,11 +66,47 @@ npm install
 
 ---
 
-## Про миграции: на экзамене они не нужны
+## Миграции
+
+### Зачем они нужны вообще
+
+Код и схема базы живут по разным законам. Код можно снести и выкатить заново —
+он весь лежит в git. С базой так нельзя: в ней данные, которые заново не
+возьмутся. Поэтому схему меняют не «как получится», а шагами, и каждый шаг
+записывают.
+
+Миграция — это и есть такой записанный шаг: файл с двумя функциями, `up` и
+`down`, лежащий в репозитории рядом с кодом. TypeORM держит в базе служебную
+таблицу `migrations` и помнит, какие шаги уже применены.
+
+Что это даёт:
+
+| Задача                                   | Без миграций                                    | С миграциями                              |
+| ---------------------------------------- | ----------------------------------------------- | ----------------------------------------- |
+| Поднять базу у коллеги или на сервере    | «выполни вот эти SQL, кажется, в таком порядке» | `migration:run` — и схема ровно та же     |
+| Понять, почему столбец такой             | никак, история не сохранилась                   | видно в git, вместе с коммитом и причиной |
+| Переименовать столбец, не потеряв данные | ORM удалит старый и создаст пустой новый        | в `up` пишется перенос данных             |
+| Откатить неудачное изменение             | руками, по памяти                               | `migration:revert`                        |
+| Увидеть изменение схемы при ревью        | оно спрятано внутри сущности                    | отдельный файл в pull request             |
+
+Главная из них — третья. Автоматическая синхронизация (`synchronize`) сравнивает
+сущности с базой и приводит базу «к коду». Переименование она видит как
+«удалить `fio`, создать `full_name`» — и данные столбца исчезают. Миграция
+позволяет написать `ALTER TABLE … RENAME`, при котором ничего не теряется.
+
+Отсюда простое правило: **`synchronize` допустим, пока потеря базы ничего не
+стоит.** Как только в ней появились данные, которые жалко, или над проектом
+работает больше одного человека — нужны миграции. На рабочем сервере
+`synchronize: true` не включают никогда.
+
+### Почему на экзамене они не нужны
 
 КИМ требует спроектировать базу и сохранить **ER-диаграмму, построенную в СУБД**. Про
 миграции в задании нет ни слова — оценивается результат в базе, а не способ, которым он
 туда попал.
+
+Все условия для `synchronize` здесь выполнены: данные демонстрационные, работа
+идёт в одиночку, база живёт три с половиной часа.
 
 Поэтому на экзамене работаем в режиме автоматической синхронизации:
 
@@ -88,6 +124,250 @@ echo 'DB_SYNCHRONIZE=true' >> .env
 **Если в конце останется время**, можно вернуть `DB_SYNCHRONIZE=false` и одной командой
 получить миграцию — `pnpm --filter @kim/backend db:migrate:generate FinalSchema`. Это
 приятное дополнение, а не требование.
+
+---
+
+## Монорепозиторий с нуля
+
+Этот раздел — на случай, когда проект нужно собрать заново: эксперт просит
+показать, как он создаётся, архив не подошёл по платформе или его просто нет.
+
+**Сначала главное: без интернета этот путь не работает.** `pnpm create vite` и
+`nest new` скачивают пакеты. На площадке сети нет, поэтому основной способ —
+распаковать архив (`docs/offline.md`), а не создавать проект заново. Если
+интернет всё же есть, порядок ниже занимает минут пятнадцать.
+
+### 1. Каркас — 3 минуты
+
+```bash
+mkdir conferences && cd conferences
+git init
+pnpm init
+```
+
+Монорепозиторий держится на трёх файлах.
+
+**`pnpm-workspace.yaml`** — какие каталоги считаются пакетами:
+
+```yaml
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm по умолчанию блокирует postinstall-скрипты зависимостей.
+allowBuilds:
+  lefthook: true
+```
+
+Без `allowBuilds` бинарники пакетов вроде lefthook молча не ставятся. В pnpm
+11+ настройка называется именно так, раньше была `onlyBuiltDependencies`.
+
+**`tsconfig.base.json`** — общие настройки компилятора, от которых наследуются
+все три пакета:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "declaration": true
+  }
+}
+```
+
+**Версия pnpm в корневом `package.json`** — чтобы на любой машине работала та
+же самая:
+
+```json
+{ "packageManager": "pnpm@12.14.0" }
+```
+
+Вызывать потом нужно `pnpm` напрямую: `corepack pnpm` ломает вложенные
+`pnpm --filter` (ADR-0002).
+
+### 2. `packages/shared` — общий словарь, 2 минуты
+
+Создаётся руками, генератор не нужен: это обычный пакет на `tsc`.
+
+```bash
+mkdir -p packages/shared/src
+```
+
+`packages/shared/package.json`:
+
+```json
+{
+  "name": "@kim/shared",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
+  }
+}
+```
+
+**Почему этот пакет появляется первым.** В нём лежат правила валидации и
+названия статусов — дословно из ТЗ. Бэкенд и фронтенд берут их отсюда, и
+расхождение между клиентской и серверной проверкой становится невозможным. Это
+прямо влияет на критерий «подсистемы безопасности» — 16 баллов.
+
+Тонкость: в `package.json` нет `"type": "module"`, поэтому `NodeNext` собирает
+пакет в CommonJS. Так его одновременно понимают и NestJS, и Vite.
+
+### 3. `apps/backend` — NestJS, 5 минут
+
+```bash
+pnpm dlx @nestjs/cli new backend --directory apps/backend --skip-git --package-manager pnpm
+```
+
+Генератор создаст лишнее — его правим:
+
+1. **Версия TypeScript — `~6.0.3`, не 7.x.** NestJS опирается на устаревшие
+   декораторы, в TypeScript 7 их поведение изменилось, и DI перестаёт собираться.
+2. **Декораторы включаются явно** в `apps/backend/tsconfig.json` — без них не
+   работают ни внедрение зависимостей, ни валидация DTO, ни охранники:
+
+   ```json
+   {
+     "extends": "../../tsconfig.base.json",
+     "compilerOptions": {
+       "outDir": "./dist",
+       "rootDir": "./src",
+       "experimentalDecorators": true,
+       "emitDecoratorMetadata": true,
+       "strictPropertyInitialization": false
+     }
+   }
+   ```
+
+3. **`ts-node` удалить.** Под TypeScript 6 он не видит `@types/node` и
+   разваливает запуск. Команды TypeORM работают по собранному `dist`.
+4. **Тесты** — на `node:test`, пакет `jest` из зависимостей убираем.
+
+Зависимости:
+
+```bash
+pnpm --filter @kim/backend add @nestjs/config @nestjs/jwt @nestjs/throttler \
+  @nestjs/typeorm typeorm pg class-validator class-transformer \
+  cookie-parser helmet @kim/shared
+```
+
+`@kim/shared` подключается как `"@kim/shared": "workspace:*"` — pnpm подставит
+локальный пакет, а не полезет в реестр.
+
+### 4. `apps/frontend` — Vite, 5 минут
+
+```bash
+pnpm create vite apps/frontend --template react-ts
+pnpm --filter @kim/frontend add @mantine/core @mantine/hooks @mantine/form \
+  @mantine/dates dayjs effector effector-react @effector/router \
+  @effector/router-react @farfetched/core
+```
+
+Что правим после генератора:
+
+1. **PostCSS для Mantine** — `apps/frontend/postcss.config.cjs`, иначе не
+   работают миксины точек разрыва:
+
+   ```js
+   module.exports = {
+     plugins: { 'postcss-preset-mantine': {}, 'postcss-simple-vars': {} },
+   };
+   ```
+
+2. **Прокси на API** в `vite.config.ts` — фронтенд всегда обращается к
+   относительному `/api`, поэтому одна и та же сборка работает и локально, и за
+   общим сервером:
+
+   ```ts
+   server: {
+     port: 5173,
+     proxy: { '/api': { target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000' } },
+   }
+   ```
+
+3. **`optimizeDeps.include: ['@kim/shared']`** — общий пакет собран в CommonJS,
+   и без этого интероп в режиме разработки ломается.
+4. **Три tsconfig схлопываются в один.** Генератор кладёт `tsconfig.json`,
+   `tsconfig.app.json` и `tsconfig.node.json`; в монорепозитории нужен один,
+   наследующий от общего:
+
+   ```json
+   {
+     "extends": "../../tsconfig.base.json",
+     "compilerOptions": {
+       "lib": ["ES2023", "DOM", "DOM.Iterable"],
+       "module": "ESNext",
+       "moduleResolution": "Bundler",
+       "jsx": "react-jsx",
+       "noEmit": true,
+       "types": ["vite/client"]
+     }
+   }
+   ```
+
+   `moduleResolution` здесь `Bundler`, а не `NodeNext` из общего файла: модули
+   разрешает Vite, а не Node.
+
+### 5. Скрипты запуска — откуда они берутся
+
+Скрипты живут на двух уровнях, и это не дублирование.
+
+**В пакете** — то, что умеет сам пакет:
+
+| Пакет           | Скрипт  | Команда                      |
+| --------------- | ------- | ---------------------------- |
+| `@kim/backend`  | `dev`   | `nest start --watch`         |
+| `@kim/backend`  | `build` | `nest build`                 |
+| `@kim/frontend` | `dev`   | `vite`                       |
+| `@kim/frontend` | `build` | `tsc --noEmit && vite build` |
+| `@kim/shared`   | `build` | `tsc -p tsconfig.json`       |
+
+**В корне** — то, что связывает пакеты между собой:
+
+```json
+{
+  "scripts": {
+    "dev:back": "pnpm --filter @kim/backend dev",
+    "dev:front": "pnpm --filter @kim/frontend dev",
+    "dev": "pnpm run shared:build && concurrently -n shared,back,front -c gray,blue,magenta \"pnpm run shared:dev\" \"pnpm run dev:back\" \"pnpm run dev:front\"",
+    "build": "pnpm run shared:build && pnpm --filter @kim/backend build && pnpm --filter @kim/frontend build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}
+```
+
+Три приёма, которых достаточно для любого монорепозитория:
+
+- **`pnpm --filter <пакет> <скрипт>`** — выполнить скрипт в одном пакете;
+- **`pnpm -r <скрипт>`** — выполнить во всех, где он есть (`-r` от recursive);
+- **`concurrently`** — запустить несколько команд разом, с подписанными
+  цветными префиксами в выводе.
+
+**Порядок в `dev` и `build` важен.** `@kim/shared` собирается первым: пока его
+`dist` не появился, бэкенд и фронтенд не найдут импорты. В режиме разработки
+он потом висит в `--watch` и пересобирается сам.
+
+### 6. Проверка, что монорепозиторий собрался
+
+```bash
+pnpm install
+pnpm build          # три пакета собираются по очереди, без ошибок
+pnpm dev            # поднимаются shared --watch, бэкенд и Vite
+curl localhost:3000/api/health
+```
+
+Если `pnpm --filter` отвечает `ERR_PNPM_BAD_PM_VERSION` — вы вызвали
+`corepack pnpm`. Нужно звать `pnpm` напрямую: он сам переключится на версию из
+`packageManager`.
 
 ---
 
@@ -109,6 +389,10 @@ pnpm db:up                      # или локальная СУБД, см. docs
 **Проверка:** `pnpm dev` поднимается без ошибок, `curl localhost:3000/api/health` отвечает.
 
 **Коммит:** `chore: развернуть каркас` — КИМ требует коммит в начале задания.
+
+Если проект нужно создать заново, а не развернуть готовый — см. раздел
+«[Монорепозиторий с нуля](#монорепозиторий-с-нуля)» выше. Учтите, что он
+требует интернета.
 
 ### Шаг 1. Сущности и база — 20 минут
 
