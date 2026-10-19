@@ -72,3 +72,48 @@
     transform: none;
   }
 }
+/*
+ * Переходы между страницами (View Transitions API).
+ *
+ * Шапка и подвал названы отдельно, чтобы остаться на месте: без имён браузер
+ * считает всю страницу одной областью и перекрашивает её целиком — вместе с
+ * меню, что выглядит как перезагрузка.
+ *
+ * Содержимое уходит и приходит со сдвигом на восемь пикселей — ровно тем же,
+ * что у появления карточек выше. Движение объясняет, что сменился экран, и не
+ * задерживает: 180 мс человек воспринимает как мгновенную реакцию.
+ */
+
+::view-transition-old(kim-page) {
+  animation: kim-page-out 120ms var(--kim-easing) both;
+}
+
+::view-transition-new(kim-page) {
+  animation: kim-page-in 180ms var(--kim-easing) both;
+}
+
+@keyframes kim-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes kim-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Движение убирается, а сама смена кадра остаётся мгновенной: анимация
+   * нулевой длительности надёжнее, чем `animation: none` — последняя оставила
+   * бы старый кадр висеть до конца перехода.
+   */
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 1ms;
+  }
+}

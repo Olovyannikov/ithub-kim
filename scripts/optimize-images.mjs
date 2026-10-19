@@ -156,6 +156,66 @@ function contentBounds(data, { width, height, channels }, from = 0, to = width) 
 }
 
 /**
+ * Делает фон прозрачным — заливкой от краёв.
+ *
+ * У значков скруглённые углы, и за дугой остаётся белый фон исходника: на
+ * сером подвале он читался светлыми уголками. Простая замена «всё белое — в
+ * прозрачное» не годится: внутри самих значков белым нарисованы буквы.
+ * Поэтому прозрачными становятся только те белые пиксели, до которых можно
+ * дойти от границы изображения, не пересекая рисунок.
+ *
+ * Полупрозрачность по дуге считается по «белизне» пикселя — иначе вместо
+ * мягкого края получилась бы ступенька.
+ */
+function clearBackground(data, { width, height, channels }) {
+  const isBackground = (i) => data[i] > 215 && data[i + 1] > 215 && data[i + 2] > 215;
+
+  const visited = new Uint8Array(width * height);
+  const queue = [];
+
+  for (let x = 0; x < width; x += 1) {
+    queue.push([x, 0], [x, height - 1]);
+  }
+
+  for (let y = 0; y < height; y += 1) {
+    queue.push([0, y], [width - 1, y]);
+  }
+
+  while (queue.length > 0) {
+    const [x, y] = queue.pop();
+
+    if (x < 0 || y < 0 || x >= width || y >= height) {
+      continue;
+    }
+
+    const index = y * width + x;
+
+    if (visited[index]) {
+      continue;
+    }
+
+    const i = index * channels;
+
+    if (!isBackground(i)) {
+      continue;
+    }
+
+    visited[index] = 1;
+
+    // Чем белее пиксель, тем он прозрачнее: на границе дуги цвет уже
+    // подмешан, и обнулять его целиком — значит получить рваный край.
+    const whiteness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+    const alpha = Math.max(0, Math.round(((255 - whiteness) / 40) * 255));
+
+    data[i + 3] = Math.min(data[i + 3], alpha);
+
+    queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+  }
+
+  return data;
+}
+
+/**
  * Режет значки соцсетей из одной картинки приложения к заданию.
  *
  * В исходнике два значка стоят рядом на белом фоне. Раньше их вырезали
@@ -177,8 +237,17 @@ async function social() {
   await mkdir(SOCIAL_TARGET, { recursive: true });
 
   for (const { name, bounds } of icons) {
-    const buffer = await sharp(SOCIAL_SOURCE)
+    // Фон убирается до изменения размера: на уменьшенной картинке углы уже
+    // размыты, и отличить фон от рисунка нельзя.
+    const cut = await sharp(SOCIAL_SOURCE)
       .extract(bounds)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const buffer = await sharp(clearBackground(cut.data, cut.info), {
+      raw: { width: cut.info.width, height: cut.info.height, channels: cut.info.channels },
+    })
       .resize(SOCIAL_SIZE, SOCIAL_SIZE, {
         fit: 'contain',
         background: { r: 0, g: 0, b: 0, alpha: 0 },

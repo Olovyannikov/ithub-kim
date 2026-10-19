@@ -147,7 +147,8 @@ export function Layout({ children }: PropsWithChildren) {
       }}
       padding="md"
     >
-      <AppShell.Header>
+      {/* Своё имя области — чтобы шапка не участвовала в переходе страницы. */}
+      <AppShell.Header style={{ viewTransitionName: 'kim-header' }}>
         <Container size="lg" h="100%" px="md">
           <Group h="100%" justify="space-between" wrap="nowrap">
             <Logo route={isAuthenticated ? routes.applications : undefined} />
@@ -224,11 +225,24 @@ export function Layout({ children }: PropsWithChildren) {
         за край.
       */}
       <AppShell.Main style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
-        <Container size="lg" py="md" px="md" w="100%" style={{ flex: 1 }}>
+        <Container
+          size="lg"
+          py="md"
+          px="md"
+          w="100%"
+          style={{ flex: 1, viewTransitionName: 'kim-page' }}
+        >
           {children}
         </Container>
 
-        <Container size="lg" px="md" pb="xl" pt="xl" w="100%">
+        <Container
+          size="lg"
+          px="md"
+          pb="xl"
+          pt="xl"
+          w="100%"
+          style={{ viewTransitionName: 'kim-footer' }}
+        >
           <Divider mb="md" />
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
             <Stack gap={4}>

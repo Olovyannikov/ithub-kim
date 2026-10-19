@@ -4,6 +4,7 @@ import { createBrowserHistory } from 'history';
 
 import { router } from '../shared/routes';
 import { appStarted } from './bootstrap';
+import { withViewTransitions } from './view-transitions';
 // Подключает модели страниц до того, как приедет их разметка — см. models.ts.
 import './models';
 
@@ -29,7 +30,7 @@ export async function createAppScope(): Promise<Scope> {
   // `navigationFailed` с причиной `not-initialized`, и роуты не откроются.
   await allSettled(router.setHistory, {
     scope,
-    params: historyAdapter(createBrowserHistory()),
+    params: withViewTransitions(historyAdapter(createBrowserHistory())),
   });
 
   // Сессию проверяем до первого рендера. Это один запрос к своему же API, зато
