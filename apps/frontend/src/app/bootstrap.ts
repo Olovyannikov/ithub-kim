@@ -1,4 +1,5 @@
 import { combine, createEvent, sample } from 'effector';
+import { createAction } from 'effector-action';
 
 import { SessionModel } from '../entities/session';
 import { sessionExpired } from '../shared/api';
@@ -13,6 +14,7 @@ export const appStarted = createEvent();
 
 sample({ clock: appStarted, target: SessionModel.sessionCheckRequested });
 
+/** Страницы, на которые пускают только после входа. */
 const PROTECTED = [routes.home, routes.applications, routes.applicationCreate, routes.admin];
 
 const $protectedRouteOpen = combine(
@@ -25,88 +27,73 @@ const $guestRouteOpen = combine([routes.login.$isOpened, routes.register.$isOpen
 );
 
 /**
- * Переходы, связанные с сессией.
+ * Единственное место, которое отвечает на вопрос «где сейчас должен быть
+ * пользователь».
  *
- * Важная тонкость: проверка сессии асинхронная. Если судить о доступе сразу по
- * `$isAuthenticated`, то при первой загрузке страницы пользователя с
- * действующей cookie выбросит на вход — проверка просто не успеет завершиться.
- * Поэтому защищённый роут закрывается только когда сессия **уже проверена**, и
- * отдельно — по завершении проверки.
+ * Раньше это были семь отдельных `sample` с `combine` и `filter`, и правило
+ * приходилось собирать в голове из кусков. `createAction` позволяет записать
+ * решение одной функцией, не теряя декларативности: источники и цели
+ * объявлены явно, а внутри — обычные условия, которые читаются сверху вниз.
+ *
+ * Важная тонкость: проверка сессии асинхронная. Пока она не завершилась, не
+ * решаем ничего — иначе пользователя с действующей cookie выбросит на вход
+ * при первой же загрузке страницы.
  *
  * Клиентские переходы нужны лишь чтобы не показывать заведомо недоступный
  * экран. Настоящую защиту делает сервер (ADR-0004).
  */
-const $needsLogin = combine(
-  SessionModel.$sessionChecked,
-  SessionModel.$isAuthenticated,
-  (checked, authenticated) => checked && !authenticated,
-);
+createAction({
+  clock: [
+    ...PROTECTED.map((route) => route.opened),
+    routes.login.opened,
+    routes.register.opened,
+    // Проверка сессии завершилась — можно принимать решение.
+    SessionModel.fetchSessionFx.finally,
+    // Вход и регистрация: пользователь уже на месте, его надо увести дальше.
+    SessionModel.loginFx.done,
+    SessionModel.registerFx.done,
+    // Выход и протухшая сессия: наоборот, надо вернуть на вход.
+    SessionModel.logoutFx.done,
+    sessionExpired,
+  ],
+  source: {
+    sessionChecked: SessionModel.$sessionChecked,
+    authenticated: SessionModel.$isAuthenticated,
+    admin: SessionModel.$isAdmin,
+    protectedOpen: $protectedRouteOpen,
+    guestOpen: $guestRouteOpen,
+    homeOpen: routes.home.$isOpened,
+    adminOpen: routes.admin.$isOpened,
+  },
+  target: {
+    openLogin: routes.login.open,
+    openApplications: routes.applications.open,
+  },
+  fn: (target, source) => {
+    // Пока неизвестно, вошёл ли пользователь, никуда не переводим.
+    if (!source.sessionChecked) {
+      return;
+    }
 
-sample({
-  clock: PROTECTED.map((route) => route.opened),
-  filter: $needsLogin,
-  fn: (): void => undefined,
-  target: routes.login.open,
-});
+    if (!source.authenticated) {
+      if (source.protectedOpen) {
+        target.openLogin();
+      }
 
-sample({
-  clock: SessionModel.fetchSessionFx.finally,
-  source: combine($protectedRouteOpen, SessionModel.$isAuthenticated, (open, authenticated) => ({
-    open,
-    authenticated,
-  })),
-  filter: ({ open, authenticated }) => open && !authenticated,
-  fn: (): void => undefined,
-  target: routes.login.open,
-});
+      return;
+    }
 
-/** Вошедшему пользователю на страницах входа и регистрации делать нечего. */
-sample({
-  clock: [routes.login.opened, routes.register.opened, SessionModel.fetchSessionFx.doneData],
-  source: combine($guestRouteOpen, SessionModel.$isAuthenticated, (open, authenticated) => ({
-    open,
-    authenticated,
-  })),
-  filter: ({ open, authenticated }) => open && authenticated,
-  fn: (): void => undefined,
-  target: routes.applications.open,
-});
+    // Вошедшему на страницах входа и регистрации делать нечего, а корень —
+    // это и есть список заявок, отдельной страницы у него нет.
+    if (source.guestOpen || source.homeOpen) {
+      target.openApplications();
 
-/**
- * После успешного входа или регистрации — на свои заявки.
- *
- * Отдельным переходом, а не через проверку «гость на странице входа»: раньше
- * этого перехода не было, и пользователь после успешного входа оставался на
- * форме. Нашлось сквозной проверкой в браузере — ни запросы curl, ни модульные
- * тесты такого не видят.
- */
-sample({
-  clock: [SessionModel.loginFx.doneData, SessionModel.registerFx.doneData],
-  fn: (): void => undefined,
-  target: routes.applications.open,
-});
+      return;
+    }
 
-/** Корень — это список заявок, отдельной страницы у него нет. */
-sample({
-  clock: routes.home.opened,
-  fn: (): void => undefined,
-  target: routes.applications.open,
-});
-
-/** Панель администратора — только для роли admin. */
-sample({
-  clock: routes.admin.opened,
-  source: combine(SessionModel.$sessionChecked, SessionModel.$isAdmin, (checked, admin) => ({
-    checked,
-    admin,
-  })),
-  filter: ({ checked, admin }) => checked && !admin,
-  fn: (): void => undefined,
-  target: routes.applications.open,
-});
-
-sample({
-  clock: [sessionExpired, SessionModel.logoutFx.done],
-  fn: (): void => undefined,
-  target: routes.login.open,
+    // Панель администратора — только для роли admin.
+    if (source.adminOpen && !source.admin) {
+      target.openApplications();
+    }
+  },
 });
