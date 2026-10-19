@@ -3,28 +3,15 @@ import { useForm } from '@mantine/form';
 import { IconBuilding, IconCalendarEvent, IconCreditCard, IconSend } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
 
-import { $roomOptions, $roomsPending } from '../../entities/room';
 import { validators } from '../../shared/forms';
 import { toDateTimeLocalValue } from '../../shared/lib';
-import { routes } from '../../shared/routes';
-import {
-  $pending,
-  $serverErrors,
-  formSubmitted,
-  PAYMENT_OPTIONS,
-  type CreateValues,
-} from './model';
+import { ApplicationCreatePageModel, PAYMENT_OPTIONS, type CreateValues } from './model';
 
 /** Задание 1, п. 4: страница формирования заявки. */
 export function ApplicationCreatePage() {
-  const { roomOptions, roomsPending, pending, serverErrors, submit, openApplications } = useUnit({
-    roomOptions: $roomOptions,
-    roomsPending: $roomsPending,
-    pending: $pending,
-    serverErrors: $serverErrors,
-    submit: formSubmitted,
-    openApplications: routes.applications.open,
-  });
+  const { roomOptions, roomsPending, pending, serverErrors, submit, openApplications } = useUnit(
+    ApplicationCreatePageModel.viewModel,
+  );
 
   const form = useForm<CreateValues>({
     initialValues: { roomId: null, startsAt: '', paymentMethod: null },

@@ -2,15 +2,7 @@ import { allSettled, createWatch, fork } from 'effector';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ApiError } from '../../shared/api';
-import {
-  $isAdmin,
-  $isAuthenticated,
-  $sessionChecked,
-  $user,
-  fetchSessionFx,
-  loginFx,
-  logoutFx,
-} from './model';
+import { SessionModel } from './model';
 
 /**
  * Модели Effector тестируются без DOM — это и есть смысл выбранного подхода
@@ -18,6 +10,9 @@ import {
  * глобального fetch, поэтому проверяется вся цепочка: api-клиент, разбор
  * ошибок и переходы состояния сессии.
  */
+const { $user, $isAuthenticated, $isAdmin, $sessionChecked, fetchSessionFx, loginFx, logoutFx } =
+  SessionModel;
+
 const realFetch = globalThis.fetch;
 
 function stubFetch(handler: (url: string, init?: RequestInit) => Response): void {

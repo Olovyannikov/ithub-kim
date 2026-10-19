@@ -18,22 +18,8 @@ import { useUnit } from 'effector-react';
 import { match } from 'ts-pattern';
 
 import { ApplicationCard } from '../../entities/application';
-import { $roomOptions } from '../../entities/room';
 import { plural } from '../../shared/lib';
-import {
-  $filters,
-  $page,
-  $pageCount,
-  $total,
-  $updatingId,
-  $viewState,
-  ASSIGNABLE_STATUS_OPTIONS,
-  filtersChanged,
-  filtersReset,
-  pageChanged,
-  statusChangeRequested,
-  STATUS_OPTIONS,
-} from './model';
+import { AdminPageModel, ASSIGNABLE_STATUS_OPTIONS, STATUS_OPTIONS } from './model';
 
 /** Задание 1, п. 5 и Задание 2, п. 5: панель администратора. */
 export function AdminPage() {
@@ -49,19 +35,7 @@ export function AdminPage() {
     resetFilters,
     changePage,
     changeStatus,
-  } = useUnit({
-    viewState: $viewState,
-    total: $total,
-    filters: $filters,
-    page: $page,
-    pageCount: $pageCount,
-    updatingId: $updatingId,
-    roomOptions: $roomOptions,
-    changeFilters: filtersChanged,
-    resetFilters: filtersReset,
-    changePage: pageChanged,
-    changeStatus: statusChangeRequested,
-  });
+  } = useUnit(AdminPageModel.viewModel);
 
   const hasFilters =
     filters.status !== null ||

@@ -5,7 +5,7 @@ import { fork } from 'effector';
 import { describe, expect, it } from 'vitest';
 
 import { renderWithProviders } from '../../test/render';
-import { $serverErrors } from './model';
+import { LoginPageModel } from './model';
 import { LoginPage } from './ui';
 
 describe('Страница входа', () => {
@@ -35,8 +35,12 @@ describe('Страница входа', () => {
     // Состояние кладём прямо в scope: так проверяется связка модели и формы
     // без обращения к сети (ADR-0006).
     const scope = fork({
+      // Внутренний стор модель отдаёт в `__` — ровно для таких проверок.
       values: [
-        [$serverErrors, { fields: { login: VALIDATION_MESSAGES.credentials }, message: null }],
+        [
+          LoginPageModel.__.$serverErrors,
+          { fields: { login: VALIDATION_MESSAGES.credentials }, message: null },
+        ],
       ],
     });
 
@@ -47,7 +51,7 @@ describe('Страница входа', () => {
 
   it('сообщение без привязки к полю выводит общим блоком', () => {
     const scope = fork({
-      values: [[$serverErrors, { fields: {}, message: 'Сервер недоступен' }]],
+      values: [[LoginPageModel.__.$serverErrors, { fields: {}, message: 'Сервер недоступен' }]],
     });
 
     renderWithProviders(<LoginPage />, { scope });

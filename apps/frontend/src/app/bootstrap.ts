@@ -1,15 +1,6 @@
 import { combine, createEvent, sample } from 'effector';
 
-import {
-  $isAdmin,
-  $isAuthenticated,
-  $sessionChecked,
-  fetchSessionFx,
-  loginFx,
-  logoutFx,
-  registerFx,
-  sessionCheckRequested,
-} from '../entities/session';
+import { SessionModel } from '../entities/session';
 import { sessionExpired } from '../shared/api';
 import { routes } from '../shared/routes';
 
@@ -20,7 +11,7 @@ import { routes } from '../shared/routes';
  */
 export const appStarted = createEvent();
 
-sample({ clock: appStarted, target: sessionCheckRequested });
+sample({ clock: appStarted, target: SessionModel.sessionCheckRequested });
 
 const PROTECTED = [routes.home, routes.applications, routes.applicationCreate, routes.admin];
 
@@ -46,8 +37,8 @@ const $guestRouteOpen = combine([routes.login.$isOpened, routes.register.$isOpen
  * экран. Настоящую защиту делает сервер (ADR-0004).
  */
 const $needsLogin = combine(
-  $sessionChecked,
-  $isAuthenticated,
+  SessionModel.$sessionChecked,
+  SessionModel.$isAuthenticated,
   (checked, authenticated) => checked && !authenticated,
 );
 
@@ -59,8 +50,8 @@ sample({
 });
 
 sample({
-  clock: fetchSessionFx.finally,
-  source: combine($protectedRouteOpen, $isAuthenticated, (open, authenticated) => ({
+  clock: SessionModel.fetchSessionFx.finally,
+  source: combine($protectedRouteOpen, SessionModel.$isAuthenticated, (open, authenticated) => ({
     open,
     authenticated,
   })),
@@ -71,8 +62,8 @@ sample({
 
 /** Вошедшему пользователю на страницах входа и регистрации делать нечего. */
 sample({
-  clock: [routes.login.opened, routes.register.opened, fetchSessionFx.doneData],
-  source: combine($guestRouteOpen, $isAuthenticated, (open, authenticated) => ({
+  clock: [routes.login.opened, routes.register.opened, SessionModel.fetchSessionFx.doneData],
+  source: combine($guestRouteOpen, SessionModel.$isAuthenticated, (open, authenticated) => ({
     open,
     authenticated,
   })),
@@ -90,7 +81,7 @@ sample({
  * тесты такого не видят.
  */
 sample({
-  clock: [loginFx.doneData, registerFx.doneData],
+  clock: [SessionModel.loginFx.doneData, SessionModel.registerFx.doneData],
   fn: (): void => undefined,
   target: routes.applications.open,
 });
@@ -105,14 +96,17 @@ sample({
 /** Панель администратора — только для роли admin. */
 sample({
   clock: routes.admin.opened,
-  source: combine($sessionChecked, $isAdmin, (checked, admin) => ({ checked, admin })),
+  source: combine(SessionModel.$sessionChecked, SessionModel.$isAdmin, (checked, admin) => ({
+    checked,
+    admin,
+  })),
   filter: ({ checked, admin }) => checked && !admin,
   fn: (): void => undefined,
   target: routes.applications.open,
 });
 
 sample({
-  clock: [sessionExpired, logoutFx.done],
+  clock: [sessionExpired, SessionModel.logoutFx.done],
   fn: (): void => undefined,
   target: routes.login.open,
 });

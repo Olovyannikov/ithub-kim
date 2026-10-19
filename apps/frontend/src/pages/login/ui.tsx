@@ -16,20 +16,15 @@ import { IconLock, IconLogin2, IconUser } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
 
 import { validators } from '../../shared/forms';
-import { routes } from '../../shared/routes';
 import { AuthAside } from '../../shared/ui';
-import { $pending, $serverErrors, formSubmitted, type LoginValues } from './model';
+import { LoginPageModel, type LoginValues } from './model';
 
 /** Задание 1, п. 2: страница авторизации. */
 export function LoginPage() {
-  // Объектная форма useUnit, а не массив: имена связаны с юнитами явно, и
-  // перестановка строк не может незаметно подменить значения местами.
-  const { serverErrors, pending, submit, openRegister } = useUnit({
-    serverErrors: $serverErrors,
-    pending: $pending,
-    submit: formSubmitted,
-    openRegister: routes.register.open,
-  });
+  // Всё, что нужно разметке, модель отдаёт одним объектом `viewModel`, и
+  // `useUnit` принимает его целиком. Компоненту не нужно знать, что ещё есть
+  // внутри модели.
+  const { serverErrors, pending, submit, openRegister } = useUnit(LoginPageModel.viewModel);
 
   const form = useForm<LoginValues>({
     initialValues: { login: '', password: '' },

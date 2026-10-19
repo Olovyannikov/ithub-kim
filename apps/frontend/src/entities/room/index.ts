@@ -1,1 +1,1 @@
-export { $roomOptions, $rooms, $roomsPending, fetchRoomsFx, roomsRequested } from './model';
+export { RoomsModel } from './model';

@@ -1,9 +1,10 @@
 import { PAYMENT_METHODS, type PaymentMethod } from '@kim/shared';
-import { createEffect, createEvent, sample, createStore } from 'effector';
+import { createEffect, createEvent, createStore, sample } from 'effector';
 
-import { roomsRequested } from '../../entities/room';
+import { RoomsModel } from '../../entities/room';
 import { applicationsApi } from '../../shared/api';
 import { NO_SERVER_ERRORS, parseServerError } from '../../shared/forms';
+import { createModel } from '../../shared/lib/effector';
 import { routes } from '../../shared/routes';
 
 /**
@@ -21,37 +22,49 @@ export const PAYMENT_OPTIONS = PAYMENT_METHODS.map((method) => ({
   label: method,
 }));
 
-export const formSubmitted = createEvent<CreateValues>();
+export const ApplicationCreatePageModel = createModel(() => {
+  const formSubmitted = createEvent<CreateValues>();
 
-export const createApplicationFx = createEffect(
-  (values: { roomId: number; startsAt: string; paymentMethod: PaymentMethod }) =>
-    applicationsApi.create(values),
-);
+  const createApplicationFx = createEffect(
+    (values: { roomId: number; startsAt: string; paymentMethod: PaymentMethod }) =>
+      applicationsApi.create(values),
+  );
 
-export const $pending = createApplicationFx.pending;
+  const $serverErrors = createStore(NO_SERVER_ERRORS)
+    .on(createApplicationFx.failData, (_, error) => parseServerError(error))
+    .reset(formSubmitted);
 
-export const $serverErrors = createStore(NO_SERVER_ERRORS)
-  .on(createApplicationFx.failData, (_, error) => parseServerError(error))
-  .reset(formSubmitted);
+  /** Справочник помещений подгружается по открытию страницы. */
+  sample({ clock: routes.applicationCreate.opened, target: RoomsModel.roomsRequested });
 
-/** Справочник помещений подгружается по открытию страницы. */
-sample({ clock: routes.applicationCreate.opened, target: roomsRequested });
+  sample({
+    clock: formSubmitted,
+    // Форма отдаёт строки — поле Select работает со строковыми значениями,
+    // а дата приходит из `datetime-local` без часового пояса.
+    fn: (values) => ({
+      roomId: Number(values.roomId),
+      startsAt: new Date(values.startsAt).toISOString(),
+      paymentMethod: values.paymentMethod as PaymentMethod,
+    }),
+    target: createApplicationFx,
+  });
 
-sample({
-  clock: formSubmitted,
-  // Форма отдаёт строки — поле Select работает со строковыми значениями,
-  // а дата приходит из `datetime-local` без часового пояса.
-  fn: (values) => ({
-    roomId: Number(values.roomId),
-    startsAt: new Date(values.startsAt).toISOString(),
-    paymentMethod: values.paymentMethod as PaymentMethod,
-  }),
-  target: createApplicationFx,
-});
+  /** После отправки заявка уходит администратору, а пользователь — к своим заявкам. */
+  sample({
+    clock: createApplicationFx.done,
+    fn: (): void => undefined,
+    target: routes.applications.open,
+  });
 
-/** После отправки заявка уходит администратору, а пользователь — к своим заявкам. */
-sample({
-  clock: createApplicationFx.done,
-  fn: (): void => undefined,
-  target: routes.applications.open,
+  return {
+    viewModel: {
+      roomOptions: RoomsModel.viewModel.roomOptions,
+      roomsPending: RoomsModel.viewModel.roomsPending,
+      pending: createApplicationFx.pending,
+      serverErrors: $serverErrors,
+      submit: formSubmitted,
+      openApplications: routes.applications.open,
+    },
+    __: { createApplicationFx, $serverErrors },
+  };
 });

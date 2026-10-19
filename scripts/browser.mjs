@@ -251,6 +251,28 @@ export async function openPage(browser) {
       }
     },
 
+    /**
+     * Ждёт, пока выражение вернёт истину.
+     *
+     * Без этого помощники искали элемент ровно один раз и падали, если React
+     * ещё не дорисовал страницу. Проверки становились нестабильными — а это
+     * хуже явной поломки: к падающим через раз проверкам привыкают и
+     * перестают их читать.
+     */
+    async waitUntil(expression, timeoutMs = 8000) {
+      const deadline = Date.now() + timeoutMs;
+
+      while (Date.now() < deadline) {
+        if (await this.evaluate(expression)) {
+          return true;
+        }
+
+        await sleep(120);
+      }
+
+      return false;
+    },
+
     async evaluate(expression) {
       const result = await call('Runtime.evaluate', {
         expression,
@@ -284,6 +306,10 @@ export async function openPage(browser) {
 
     /** Вводит значение в поле по подписи — так же, как это сделал бы человек. */
     async fillByLabel(label, value) {
+      await this.waitUntil(`Array.from(document.querySelectorAll('label')).some(
+        (l) => l.textContent.replace(/\\s*\\*$/, '').trim() === ${JSON.stringify(label)},
+      )`);
+
       const ok = await this.evaluate(`(() => {
         const labels = Array.from(document.querySelectorAll('label'));
         const target = labels.find((l) => l.textContent.replace(/\\s*\\*$/, '').trim() === ${JSON.stringify(label)});
@@ -351,6 +377,10 @@ export async function openPage(browser) {
 
     /** То же, но список найден по placeholder — для полей без тега label. */
     async selectByPlaceholder(placeholder, optionText) {
+      await this.waitUntil(
+        `Boolean(document.querySelector('input[placeholder=' + JSON.stringify(${JSON.stringify(placeholder)}) + ']'))`,
+      );
+
       const opened = await this.evaluate(`(() => {
         const input = document.querySelector('input[placeholder=' + JSON.stringify(${JSON.stringify(placeholder)}) + ']');
         if (!input) return false;
@@ -386,6 +416,10 @@ export async function openPage(browser) {
     },
 
     async clickByText(text) {
+      await this.waitUntil(`Array.from(document.querySelectorAll('button, a')).some(
+        (n) => n.textContent.trim() === ${JSON.stringify(text)},
+      )`);
+
       const ok = await this.evaluate(`(() => {
         const nodes = Array.from(document.querySelectorAll('button, a'));
         const target = nodes.find((n) => n.textContent.trim() === ${JSON.stringify(text)});
@@ -421,6 +455,10 @@ export async function openPage(browser) {
      * свёрнутого мобильного меню.
      */
     async clickByLabel(label) {
+      await this.waitUntil(`Array.from(
+        document.querySelectorAll('[aria-label=' + JSON.stringify(${JSON.stringify(label)}) + ']'),
+      ).some((n) => n.getClientRects().length > 0)`);
+
       const ok = await this.evaluate(`(() => {
         const nodes = Array.from(
           document.querySelectorAll('[aria-label=' + JSON.stringify(${JSON.stringify(label)}) + ']'),

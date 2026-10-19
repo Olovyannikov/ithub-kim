@@ -290,6 +290,12 @@ importers:
       '@effector/router-react':
         specifier: ^1.0.2
         version: 1.0.2(effector-action@1.2.2(effector@23.4.4)(patronum@2.3.0(effector@23.4.4)))(effector-react@23.3.0(effector@23.4.4)(react@19.3.1))(effector@23.4.4)(patronum@2.3.0(effector@23.4.4))(react@19.3.1)(zod@4.6.7)
+      '@farfetched/core':
+        specifier: ^0.15.0
+        version: 0.15.0(effector@23.4.4)
+      '@farfetched/zod':
+        specifier: ^0.15.0
+        version: 0.15.0(@farfetched/core@0.15.0(effector@23.4.4))(zod@4.6.7)
       '@kim/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -657,6 +663,17 @@ packages:
   '@eslint/plugin-kit@0.7.3':
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@farfetched/core@0.15.0':
+    resolution: {integrity: sha512-VHjR5GskzPF8GWUUTFWblhk/trofAjmncyTpThRH9Iy3q5NknuTVp/yUWNeyupgfoEpRROUyTjkziFCeL7mreg==}
+    peerDependencies:
+      effector: ^23.0.0
+
+  '@farfetched/zod@0.15.0':
+    resolution: {integrity: sha512-uztTOTtR8FBxWtyyFAv0VI5sNvvc7KAXibXZXW/faZbul8qo8riXXoBlBwuMq8e14hYOcvQgpUxNxxgp1QZdYA==}
+    peerDependencies:
+      '@farfetched/core': 0.15.0
+      zod: ^3.19
 
   '@floating-ui/core@1.8.0':
     resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
@@ -3622,6 +3639,15 @@ snapshots:
     dependencies:
       '@eslint/core': 1.2.1
       levn: 0.4.1
+
+  '@farfetched/core@0.15.0(effector@23.4.4)':
+    dependencies:
+      effector: 23.4.4
+
+  '@farfetched/zod@0.15.0(@farfetched/core@0.15.0(effector@23.4.4))(zod@4.6.7)':
+    dependencies:
+      '@farfetched/core': 0.15.0(effector@23.4.4)
+      zod: 4.6.7
 
   '@floating-ui/core@1.8.0':
     dependencies:

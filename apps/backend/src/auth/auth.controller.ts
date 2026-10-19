@@ -13,6 +13,24 @@ import { RegisterDto } from './dto/register.dto';
 
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Ограничение частоты попыток входа и регистрации (ADR-0004).
+ *
+ * Значения настраиваются переменными окружения по двум причинам. Первая —
+ * демонстрация: если эксперт дважды ошибётся паролем, а следом попробует ещё
+ * несколько раз, приложение на минуту перестанет пускать **всех** с этого
+ * адреса, и это будет выглядеть как поломка. Вторая — сквозные проверки:
+ * каждый прогон делает около пяти входов, и два прогона подряд упирались в
+ * лимит.
+ *
+ * По умолчанию 10 попыток в минуту: перебор это по-прежнему останавливает, а
+ * живого человека — нет.
+ */
+const AUTH_THROTTLE = {
+  limit: Number(process.env.AUTH_THROTTLE_LIMIT ?? 10),
+  ttl: Number(process.env.AUTH_THROTTLE_TTL ?? 60_000),
+};
+
 function cookieOptions(): CookieOptions {
   return {
     httpOnly: true,
@@ -29,9 +47,8 @@ function cookieOptions(): CookieOptions {
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  /** 5 попыток в минуту: защита от перебора (ADR-0004). */
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: AUTH_THROTTLE })
   @Post('register')
   async register(
     @Body() dto: RegisterDto,
@@ -45,7 +62,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: AUTH_THROTTLE })
   @HttpCode(200)
   @Post('login')
   async login(

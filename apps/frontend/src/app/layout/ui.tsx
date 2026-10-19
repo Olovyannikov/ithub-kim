@@ -16,7 +16,7 @@ import { IconCalendarPlus, IconListDetails, IconLogout, IconShieldCog } from '@t
 import { useUnit } from 'effector-react';
 import type { ReactNode } from 'react';
 
-import { $isAdmin, $isAuthenticated, $user, logoutRequested } from '../../entities/session';
+import { SessionModel } from '../../entities/session';
 import { routes } from '../../shared/routes';
 import { Logo } from '../../shared/ui';
 
@@ -32,16 +32,12 @@ const SOCIAL = [
  * часть проектируется от макета 390×844 (ADR-0008).
  */
 export function Layout({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated, isAdmin, logout, openApplications, openCreate, openAdmin } =
-    useUnit({
-      user: $user,
-      isAuthenticated: $isAuthenticated,
-      isAdmin: $isAdmin,
-      logout: logoutRequested,
-      openApplications: routes.applications.open,
-      openCreate: routes.applicationCreate.open,
-      openAdmin: routes.admin.open,
-    });
+  const { user, isAuthenticated, isAdmin, logout } = useUnit(SessionModel.viewModel);
+  const { openApplications, openCreate, openAdmin } = useUnit({
+    openApplications: routes.applications.open,
+    openCreate: routes.applicationCreate.open,
+    openAdmin: routes.admin.open,
+  });
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
 
   const navigate = (open: () => void) => () => {

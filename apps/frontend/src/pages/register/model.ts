@@ -1,9 +1,10 @@
 import { createEvent, createStore, sample } from 'effector';
 
-import { registerFx } from '../../entities/session';
+import { SessionModel } from '../../entities/session';
 import { NO_SERVER_ERRORS, parseServerError } from '../../shared/forms';
+import { createModel } from '../../shared/lib/effector';
+import { routes } from '../../shared/routes';
 
-/** Модель страницы регистрации — Задание 1, п. 1. */
 export interface RegisterValues {
   login: string;
   password: string;
@@ -12,12 +13,23 @@ export interface RegisterValues {
   email: string;
 }
 
-export const formSubmitted = createEvent<RegisterValues>();
+/** Модель страницы регистрации — Задание 1, п. 1. */
+export const RegisterPageModel = createModel(() => {
+  const formSubmitted = createEvent<RegisterValues>();
 
-export const $serverErrors = createStore(NO_SERVER_ERRORS)
-  .on(registerFx.failData, (_, error) => parseServerError(error))
-  .reset(formSubmitted, registerFx.done);
+  const $serverErrors = createStore(NO_SERVER_ERRORS)
+    .on(SessionModel.registerFx.failData, (_, error) => parseServerError(error))
+    .reset(formSubmitted, SessionModel.registerFx.done);
 
-export const $pending = registerFx.pending;
+  sample({ clock: formSubmitted, target: SessionModel.registerFx });
 
-sample({ clock: formSubmitted, target: registerFx });
+  return {
+    viewModel: {
+      serverErrors: $serverErrors,
+      pending: SessionModel.registerFx.pending,
+      submit: formSubmitted,
+      openLogin: routes.login.open,
+    },
+    __: { $serverErrors },
+  };
+});

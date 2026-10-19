@@ -16,9 +16,8 @@ import { IconAt, IconLock, IconPhone, IconUser, IconUserPlus } from '@tabler/ico
 import { useUnit } from 'effector-react';
 
 import { validators } from '../../shared/forms';
-import { routes } from '../../shared/routes';
 import { AuthAside } from '../../shared/ui';
-import { $pending, $serverErrors, formSubmitted, type RegisterValues } from './model';
+import { RegisterPageModel, type RegisterValues } from './model';
 
 /**
  * Задание 1, п. 1: страница регистрации.
@@ -27,12 +26,7 @@ import { $pending, $serverErrors, formSubmitted, type RegisterValues } from './m
  * `@kim/shared` через `validators` (ADR-0005).
  */
 export function RegisterPage() {
-  const { serverErrors, pending, submit, openLogin } = useUnit({
-    serverErrors: $serverErrors,
-    pending: $pending,
-    submit: formSubmitted,
-    openLogin: routes.login.open,
-  });
+  const { serverErrors, pending, submit, openLogin } = useUnit(RegisterPageModel.viewModel);
 
   const form = useForm<RegisterValues>({
     initialValues: { login: '', password: '', fullName: '', phone: '', email: '' },

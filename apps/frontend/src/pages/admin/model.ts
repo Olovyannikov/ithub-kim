@@ -7,16 +7,13 @@ import {
 import { combine, createEffect, createEvent, createStore, sample } from 'effector';
 import { debounce } from 'patronum';
 
-import { roomsRequested } from '../../entities/room';
+import { RoomsModel } from '../../entities/room';
 import { applicationsApi } from '../../shared/api';
 import { parseServerError } from '../../shared/forms';
+import { createModel } from '../../shared/lib/effector';
 import { toListViewState } from '../../shared/lib';
 import { routes } from '../../shared/routes';
 
-/**
- * Задание 1, п. 5 и Задание 2, п. 5: панель администратора — все заявки
- * зарегистрированных пользователей, фильтрация и смена статуса.
- */
 export const PAGE_SIZE = 10;
 
 export interface Filters {
@@ -45,79 +42,104 @@ export const ASSIGNABLE_STATUS_OPTIONS = APPLICATION_STATUSES_ADMIN_ASSIGNABLE.m
   label: status,
 }));
 
-export const filtersChanged = createEvent<Filters>();
-export const filtersReset = createEvent();
-export const pageChanged = createEvent<number>();
-export const statusChangeRequested = createEvent<{ id: number; status: ApplicationStatus }>();
+/**
+ * Задание 1, п. 5 и Задание 2, п. 5: панель администратора — все заявки
+ * зарегистрированных пользователей, фильтрация и смена статуса.
+ */
+export const AdminPageModel = createModel(() => {
+  const filtersChanged = createEvent<Filters>();
+  const filtersReset = createEvent();
+  const pageChanged = createEvent<number>();
+  const statusChangeRequested = createEvent<{ id: number; status: ApplicationStatus }>();
 
-export const $filters = createStore(EMPTY_FILTERS)
-  .on(filtersChanged, (_, filters) => filters)
-  .reset(filtersReset);
+  const $filters = createStore(EMPTY_FILTERS)
+    .on(filtersChanged, (_, filters) => filters)
+    .reset(filtersReset);
 
-export const $page = createStore(1)
-  .on(pageChanged, (_, page) => page)
-  // Любая смена фильтров возвращает на первую страницу — иначе можно оказаться
-  // на седьмой странице пустого результата.
-  .reset(filtersChanged, filtersReset);
+  const $page = createStore(1)
+    .on(pageChanged, (_, page) => page)
+    // Любая смена фильтров возвращает на первую страницу — иначе можно оказаться
+    // на седьмой странице пустого результата.
+    .reset(filtersChanged, filtersReset);
 
-export const fetchAllFx = createEffect(applicationsApi.all);
+  const fetchAllFx = createEffect(applicationsApi.all);
 
-export const updateStatusFx = createEffect(
-  ({ id, status }: { id: number; status: ApplicationStatus }) =>
+  const updateStatusFx = createEffect(({ id, status }: { id: number; status: ApplicationStatus }) =>
     applicationsApi.updateStatus(id, { status }),
-);
-
-export const $items = createStore<ApplicationDto[]>([])
-  .on(fetchAllFx.doneData, (_, page) => page.items)
-  // Сервер возвращает обновлённую заявку — подменяем её на месте, без
-  // перезагрузки всего списка.
-  .on(updateStatusFx.doneData, (items, updated) =>
-    items.map((item) => (item.id === updated.id ? updated : item)),
   );
 
-export const $total = createStore(0).on(fetchAllFx.doneData, (_, page) => page.total);
-export const $pending = fetchAllFx.pending;
-export const $updatingId = createStore<number | null>(null)
-  .on(updateStatusFx, (_, { id }) => id)
-  .reset(updateStatusFx.finally);
+  const $items = createStore<ApplicationDto[]>([])
+    .on(fetchAllFx.doneData, (_, page) => page.items)
+    // Сервер возвращает обновлённую заявку — подменяем её на месте, без
+    // перезагрузки всего списка.
+    .on(updateStatusFx.doneData, (items, updated) =>
+      items.map((item) => (item.id === updated.id ? updated : item)),
+    );
 
-export const $error = createStore<string | null>(null)
-  .on([fetchAllFx.failData, updateStatusFx.failData], (_, error) => parseServerError(error).message)
-  .reset(fetchAllFx, updateStatusFx);
+  const $total = createStore(0).on(fetchAllFx.doneData, (_, page) => page.total);
 
-export const $pageCount = $total.map((total) => Math.max(1, Math.ceil(total / PAGE_SIZE)));
+  const $updatingId = createStore<number | null>(null)
+    .on(updateStatusFx, (_, { id }) => id)
+    .reset(updateStatusFx.finally);
 
-export const $viewState = combine($items, $pending, $error, (items, pending, error) =>
-  toListViewState({ items, pending, error }),
-);
+  const $error = createStore<string | null>(null)
+    .on(
+      [fetchAllFx.failData, updateStatusFx.failData],
+      (_, error) => parseServerError(error).message,
+    )
+    .reset(fetchAllFx, updateStatusFx);
 
-/** Запрос собирается из фильтров и номера страницы в одном месте. */
-const $query = combine($filters, $page, (filters, page) => ({
-  status: filters.status ?? undefined,
-  roomId: filters.roomId ? Number(filters.roomId) : undefined,
-  author: filters.author.trim() || undefined,
-  from: filters.from ? new Date(filters.from).toISOString() : undefined,
-  to: filters.to ? new Date(filters.to).toISOString() : undefined,
-  limit: PAGE_SIZE,
-  offset: (page - 1) * PAGE_SIZE,
-}));
+  const $pageCount = $total.map((total) => Math.max(1, Math.ceil(total / PAGE_SIZE)));
 
-sample({ clock: routes.admin.opened, target: roomsRequested });
+  const $viewState = combine($items, fetchAllFx.pending, $error, (items, pending, error) =>
+    toListViewState({ items, pending, error }),
+  );
 
-/**
- * Фильтры с задержкой.
- *
- * Поле «Заявитель» — обычный ввод, и без задержки каждый символ уходил
- * отдельным запросом: замер показал девять запросов на девять символов.
- * Задержка в 300 мс оставляет один. Открытие страницы, сброс и смена
- * страницы задержки не требуют — там событие однократное.
- */
-const filtersSettled = debounce(filtersChanged, 300);
+  /** Запрос собирается из фильтров и номера страницы в одном месте. */
+  const $query = combine($filters, $page, (filters, page) => ({
+    status: filters.status ?? undefined,
+    roomId: filters.roomId ? Number(filters.roomId) : undefined,
+    author: filters.author.trim() || undefined,
+    from: filters.from ? new Date(filters.from).toISOString() : undefined,
+    to: filters.to ? new Date(filters.to).toISOString() : undefined,
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  }));
 
-sample({
-  clock: [routes.admin.opened, filtersSettled, filtersReset, pageChanged],
-  source: $query,
-  target: fetchAllFx,
+  sample({ clock: routes.admin.opened, target: RoomsModel.roomsRequested });
+
+  /**
+   * Фильтры с задержкой.
+   *
+   * Поле «Заявитель» — обычный ввод, и без задержки каждый символ уходил
+   * отдельным запросом: замер показал девять запросов на девять символов.
+   * Задержка в 300 мс оставляет один. Открытие страницы, сброс и смена
+   * страницы задержки не требуют — там событие однократное.
+   */
+  const filtersSettled = debounce(filtersChanged, 300);
+
+  sample({
+    clock: [routes.admin.opened, filtersSettled, filtersReset, pageChanged],
+    source: $query,
+    target: fetchAllFx,
+  });
+
+  sample({ clock: statusChangeRequested, target: updateStatusFx });
+
+  return {
+    viewModel: {
+      viewState: $viewState,
+      total: $total,
+      filters: $filters,
+      page: $page,
+      pageCount: $pageCount,
+      updatingId: $updatingId,
+      roomOptions: RoomsModel.viewModel.roomOptions,
+      changeFilters: filtersChanged,
+      resetFilters: filtersReset,
+      changePage: pageChanged,
+      changeStatus: statusChangeRequested,
+    },
+    __: { $items, $error, $query, fetchAllFx, updateStatusFx },
+  };
 });
-
-sample({ clock: statusChangeRequested, target: updateStatusFx });

@@ -19,24 +19,14 @@ import { match } from 'ts-pattern';
 import { ApplicationCard } from '../../entities/application';
 import { validators } from '../../shared/forms';
 import { plural } from '../../shared/lib';
-import { routes } from '../../shared/routes';
-import {
-  $applications,
-  $reviewErrors,
-  $reviewingId,
-  $reviewPending,
-  $viewState,
-  reviewFormClosed,
-  reviewFormOpened,
-  reviewSubmitted,
-  type ReviewValues,
-} from './model';
+import { ApplicationsPageModel, type ReviewValues } from './model';
 
 /** Задание 1, п. 3: страница просмотра заявок. */
 export function ApplicationsPage() {
+  // Всё, что нужно разметке, модель отдаёт одним объектом `viewModel`.
   const {
-    applications,
     viewState,
+    applicationsCount,
     reviewingId,
     reviewErrors,
     reviewPending,
@@ -44,17 +34,7 @@ export function ApplicationsPage() {
     closeReview,
     submitReview,
     openCreate,
-  } = useUnit({
-    applications: $applications,
-    viewState: $viewState,
-    reviewingId: $reviewingId,
-    reviewErrors: $reviewErrors,
-    reviewPending: $reviewPending,
-    openReview: reviewFormOpened,
-    closeReview: reviewFormClosed,
-    submitReview: reviewSubmitted,
-    openCreate: routes.applicationCreate.open,
-  });
+  } = useUnit(ApplicationsPageModel.viewModel);
 
   const form = useForm<ReviewValues>({
     initialValues: { rating: 5, text: '' },
@@ -66,9 +46,9 @@ export function ApplicationsPage() {
       <Group justify="space-between" align="flex-end">
         <Stack gap={2}>
           <Title order={1}>Мои заявки</Title>
-          {applications.length > 0 ? (
+          {applicationsCount > 0 ? (
             <Text c="dimmed">
-              {applications.length} {plural(applications.length, ['заявка', 'заявки', 'заявок'])}
+              {applicationsCount} {plural(applicationsCount, ['заявка', 'заявки', 'заявок'])}
             </Text>
           ) : null}
         </Stack>
