@@ -11,9 +11,12 @@
  * Поэтому делим иначе: модели — заранее, разметка — по требованию. Модели
  * лёгкие, это несколько килобайт, а разметка со всеми компонентами Mantine
  * весит на порядок больше.
+ *
+ * Импорт идёт через публичный API срезов: внутри их `index.ts` разметка
+ * объявлена динамическим импортом, поэтому в главный бандл она не попадает.
  */
-import '../pages/admin/model';
-import '../pages/application-create/model';
-import '../pages/applications/model';
-import '../pages/login/model';
-import '../pages/register/model';
+import '../pages/admin';
+import '../pages/application-create';
+import '../pages/applications';
+import '../pages/login';
+import '../pages/register';

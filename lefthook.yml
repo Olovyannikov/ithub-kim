@@ -17,9 +17,11 @@ frontend:
     prettier:
       run: pnpm exec prettier --write --ignore-unknown {staged_files} && git add {staged_files}
 
-    # TODO (Часть 3, ADR-0006): проверка границ FSD
-    # fsd:
-    #   run: pnpm run lint:fsd
+    # Границы Feature-Sliced Design: публичные API срезов, направление
+    # импортов, лишние слои. Запускается на весь фронтенд, а не на изменённые
+    # файлы: нарушение границы видно только в связке с остальным кодом.
+    fsd:
+      run: pnpm run lint:fsd
 
     # TODO (Часть 5, ADR-0008): стили
     # stylelint:

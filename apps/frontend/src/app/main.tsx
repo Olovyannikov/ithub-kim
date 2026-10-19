@@ -1,9 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { App } from './app';
-import { createAppScope } from './app/scope';
+import { App } from './index';
+import { createAppScope } from './scope';
 
+// Точка входа — часть слоя `app`: именно он отвечает за запуск приложения,
+// провайдеры и инициализацию Scope (ADR-0006).
 const container = document.getElementById('root');
 
 if (!container) {

@@ -25,6 +25,7 @@
     "py:seed": "cd apps/backend-py && .venv/bin/python -m app.seed",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "lint:fsd": "steiger apps/frontend/src",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "mantine:docs": "bash scripts/fetch-mantine-docs.sh",
@@ -39,6 +40,7 @@
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@eslint/js": "^10.0.1",
+    "@feature-sliced/steiger-plugin": "^0.8.0",
     "concurrently": "^10.0.6",
     "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
@@ -48,6 +50,7 @@
     "lefthook": "^2.2.2",
     "prettier": "^3.9.10",
     "sharp": "^0.35.5",
+    "steiger": "^0.7.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.2"
   }

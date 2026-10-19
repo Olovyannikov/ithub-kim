@@ -15,7 +15,6 @@
     "@effector/router": "^1.2.0",
     "@effector/router-react": "^1.0.2",
     "@farfetched/core": "^0.15.0",
-    "@farfetched/zod": "^0.15.0",
     "@kim/shared": "workspace:*",
     "@mantine/core": "^9.7.2",
     "@mantine/form": "^9.7.2",

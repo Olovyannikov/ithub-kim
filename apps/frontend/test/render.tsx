@@ -4,10 +4,14 @@ import { fork, type Scope } from 'effector';
 import { Provider } from 'effector-react';
 import type { ReactElement } from 'react';
 
-import { theme } from '../shared/theme';
+import { theme } from '../src/shared/theme';
 
 /**
  * Рендер компонента в тех же провайдерах, что и приложение.
+ *
+ * Каталог `test` лежит рядом с `src`, а не внутри него: это не слой
+ * Feature-Sliced Design, а инструмент проверки, и правило импортов
+ * «только вниз» на него не распространяется.
  *
  * Scope создаётся на каждый тест: состояние не протекает между проверками, и
  * путь ровно тот же, каким приложение работает в браузере (ADR-0006).

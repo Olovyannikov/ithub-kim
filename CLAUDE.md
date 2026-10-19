@@ -128,12 +128,29 @@ export const SomeModel = createModel(() => {
 либо логика просочилась в разметку.
 
 ```
-apps/frontend/src/
-  app/        провайдеры, тема, запуск, роутер, общий layout
-  pages/      по странице из ТЗ: model.ts (логика) + ui.tsx (разметка)
-  entities/   session, room, application
-  shared/     api, forms, routes, theme
+apps/frontend/
+  src/
+    app/        точка входа, провайдеры, тема, Scope, роутер, общий layout
+    pages/      по странице из ТЗ: model.ts (логика) + ui.tsx (разметка)
+    entities/   session, room, application
+    shared/     api, forms, routes, theme, lib, ui
+  test/         помощники тестов — рядом с src, а не внутри: это не слой FSD
 ```
+
+Границы проверяет **steiger** (`pnpm lint:fsd`, он же в `pre-commit`) на полном наборе
+правил `recommended`, без послаблений. Если он ругается на обход публичного API — это не
+повод править конфиг: почти всегда это сигнал, что структура собрана неверно.
+
+Разметка страниц, которые грузятся отдельной частью сборки, экспортируется из `index.ts`
+**загрузчиком**, а не напрямую:
+
+```ts
+export { AdminPageModel } from './model';
+export const loadAdminPage = () => import('./ui').then((m) => ({ default: m.AdminPage }));
+```
+
+Так публичный API остаётся единственной точкой входа, а разметка в главный бандл не
+попадает — на неё есть только динамическая ссылка.
 
 Правила, от которых не отступаем:
 
@@ -228,6 +245,7 @@ pnpm dev:front        # только Vite     → http://localhost:5173
 pnpm build            # сборка всех пакетов
 pnpm typecheck        # проверка типов во всех пакетах
 pnpm lint             # ESLint по репозиторию
+pnpm lint:fsd         # границы Feature-Sliced Design (steiger)
 pnpm format           # Prettier с автофиксом
 pnpm db:up            # PostgreSQL в docker compose
 pnpm db:reset          # пересоздать БД с нуля

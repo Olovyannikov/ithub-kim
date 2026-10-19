@@ -6,6 +6,9 @@ import {
 } from '@effector/router-react';
 import { Card, Center, Loader, Stack, Text, Title } from '@mantine/core';
 
+import { loadAdminPage } from '../pages/admin';
+import { loadApplicationCreatePage } from '../pages/application-create';
+import { loadApplicationsPage } from '../pages/applications';
 import { LoginPage } from '../pages/login';
 import { RegisterPage } from '../pages/register';
 import { router, routes } from '../shared/routes';
@@ -40,8 +43,8 @@ function RouteFallback() {
  * тянет код панели администратора, а посетитель страницы входа — вообще
  * ничего лишнего.
  *
- * Страницы экспортируются именованно, поэтому в `import()` подставляем
- * нужный компонент под ключ `default` — именно его ждёт `React.lazy`.
+ * Загрузчики разметки объявлены внутри самих срезов, поэтому роутер не лезет
+ * в их внутренние файлы — публичный API остаётся единственной точкой входа.
  */
 const RoutesView = createRoutesView({
   routes: [
@@ -49,22 +52,19 @@ const RoutesView = createRoutesView({
     createRouteView({ route: routes.register, view: RegisterPage, layout: Layout }),
     createLazyRouteView({
       route: routes.applications,
-      view: () => import('../pages/applications').then((m) => ({ default: m.ApplicationsPage })),
+      view: loadApplicationsPage,
       layout: Layout,
       fallback: RouteFallback,
     }),
     createLazyRouteView({
       route: routes.applicationCreate,
-      view: () =>
-        import('../pages/application-create').then((m) => ({
-          default: m.ApplicationCreatePage,
-        })),
+      view: loadApplicationCreatePage,
       layout: Layout,
       fallback: RouteFallback,
     }),
     createLazyRouteView({
       route: routes.admin,
-      view: () => import('../pages/admin').then((m) => ({ default: m.AdminPage })),
+      view: loadAdminPage,
       layout: Layout,
       fallback: RouteFallback,
     }),

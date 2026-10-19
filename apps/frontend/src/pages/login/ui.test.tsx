@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { fork } from 'effector';
 import { describe, expect, it } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
+import { renderWithProviders } from '../../../test/render';
 import { LoginPageModel } from './model';
 import { LoginPage } from './ui';
 
