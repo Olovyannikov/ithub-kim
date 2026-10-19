@@ -18,6 +18,10 @@ export const theme = createTheme({
   primaryShade: 6,
   defaultRadius: 'md',
 
+  // Штатная настройка Mantine: собственные переходы компонентов отключаются,
+  // если в системе включено «уменьшить движение».
+  respectReducedMotion: true,
+
   fontFamily: "'PT Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
   headings: {
     fontFamily: "'PT Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",

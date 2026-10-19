@@ -4,14 +4,19 @@ import { IconBuilding, IconCalendarEvent, IconCreditCard, IconSend } from '@tabl
 import { useUnit } from 'effector-react';
 
 import { validators } from '../../shared/forms';
-import { toDateTimeLocalValue } from '../../shared/lib';
 import { ApplicationCreatePageModel, PAYMENT_OPTIONS, type CreateValues } from './model';
 
 /** Задание 1, п. 4: страница формирования заявки. */
 export function ApplicationCreatePage() {
-  const { roomOptions, roomsPending, pending, serverErrors, submit, openApplications } = useUnit(
-    ApplicationCreatePageModel.viewModel,
-  );
+  const {
+    roomOptions,
+    roomsPending,
+    minStartsAt,
+    pending,
+    serverErrors,
+    submit,
+    openApplications,
+  } = useUnit(ApplicationCreatePageModel.viewModel);
 
   const form = useForm<CreateValues>({
     initialValues: { roomId: null, startsAt: '', paymentMethod: null },
@@ -22,9 +27,6 @@ export function ApplicationCreatePage() {
     },
     validateInputOnBlur: true,
   });
-
-  // Раньше текущего момента выбрать нельзя — то же правило проверяет сервер.
-  const minDateTime = toDateTimeLocalValue(new Date());
 
   return (
     <Card withBorder padding="xl" maw={620} mx="auto" bg="white">
@@ -67,7 +69,7 @@ export function ApplicationCreatePage() {
           <TextInput
             type="datetime-local"
             label="Начало конференции"
-            min={minDateTime}
+            min={minStartsAt}
             leftSection={<IconCalendarEvent size={18} stroke={1.8} />}
             withAsterisk
             {...form.getInputProps('startsAt')}

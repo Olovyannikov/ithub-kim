@@ -52,15 +52,14 @@ export const AdminPageModel = createModel(() => {
   const pageChanged = createEvent<number>();
   const statusChangeRequested = createEvent<{ id: number; status: ApplicationStatus }>();
 
-  const $filters = createStore(EMPTY_FILTERS)
-    .on(filtersChanged, (_, filters) => filters)
-    .reset(filtersReset);
+  const $filters = createStore(EMPTY_FILTERS).reset(filtersReset);
 
-  const $page = createStore(1)
-    .on(pageChanged, (_, page) => page)
-    // Любая смена фильтров возвращает на первую страницу — иначе можно оказаться
-    // на седьмой странице пустого результата.
-    .reset(filtersChanged, filtersReset);
+  // Любая смена фильтров возвращает на первую страницу — иначе можно оказаться
+  // на седьмой странице пустого результата.
+  const $page = createStore(1).reset(filtersChanged, filtersReset);
+
+  sample({ clock: filtersChanged, target: $filters });
+  sample({ clock: pageChanged, target: $page });
 
   const fetchAllFx = createEffect(applicationsApi.all);
 
@@ -68,28 +67,47 @@ export const AdminPageModel = createModel(() => {
     applicationsApi.updateStatus(id, { status }),
   );
 
-  const $items = createStore<ApplicationDto[]>([])
-    .on(fetchAllFx.doneData, (_, page) => page.items)
-    // Сервер возвращает обновлённую заявку — подменяем её на месте, без
-    // перезагрузки всего списка.
-    .on(updateStatusFx.doneData, (items, updated) =>
-      items.map((item) => (item.id === updated.id ? updated : item)),
-    );
+  const $items = createStore<ApplicationDto[]>([]);
+  const $total = createStore(0);
+  const $updatingId = createStore<number | null>(null).reset(updateStatusFx.finally);
+  const $error = createStore<string | null>(null).reset(fetchAllFx, updateStatusFx);
 
-  const $total = createStore(0).on(fetchAllFx.doneData, (_, page) => page.total);
+  sample({ clock: fetchAllFx.doneData, fn: (page) => page.items, target: $items });
+  sample({ clock: fetchAllFx.doneData, fn: (page) => page.total, target: $total });
 
-  const $updatingId = createStore<number | null>(null)
-    .on(updateStatusFx, (_, { id }) => id)
-    .reset(updateStatusFx.finally);
+  // Сервер возвращает обновлённую заявку — подменяем её на месте, без
+  // перезагрузки всего списка.
+  sample({
+    clock: updateStatusFx.doneData,
+    source: $items,
+    fn: (items, updated) => items.map((item) => (item.id === updated.id ? updated : item)),
+    target: $items,
+  });
 
-  const $error = createStore<string | null>(null)
-    .on(
-      [fetchAllFx.failData, updateStatusFx.failData],
-      (_, error) => parseServerError(error).message,
-    )
-    .reset(fetchAllFx, updateStatusFx);
+  sample({ clock: updateStatusFx, fn: ({ id }) => id, target: $updatingId });
+
+  sample({
+    clock: [fetchAllFx.failData, updateStatusFx.failData],
+    fn: (error) => parseServerError(error).message,
+    target: $error,
+  });
 
   const $pageCount = $total.map((total) => Math.max(1, Math.ceil(total / PAGE_SIZE)));
+
+  /**
+   * Задан ли хоть один фильтр. От этого зависят кнопка сброса и текст пустой
+   * выдачи — «ничего не нашлось» вместо «заявок пока нет».
+   *
+   * Считается здесь, а не в разметке: это правило, а не оформление.
+   */
+  const $hasFilters = $filters.map(
+    (filters) =>
+      filters.status !== null ||
+      filters.roomId !== null ||
+      filters.author !== '' ||
+      filters.from !== '' ||
+      filters.to !== '',
+  );
 
   const $viewState = combine($items, fetchAllFx.pending, $error, (items, pending, error) =>
     toListViewState({ items, pending, error }),
@@ -133,6 +151,7 @@ export const AdminPageModel = createModel(() => {
       filters: $filters,
       page: $page,
       pageCount: $pageCount,
+      hasFilters: $hasFilters,
       updatingId: $updatingId,
       roomOptions: RoomsModel.viewModel.roomOptions,
       changeFilters: filtersChanged,

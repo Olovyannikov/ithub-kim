@@ -131,7 +131,7 @@ export const SomeModel = createModel(() => {
 apps/frontend/src/
   app/        провайдеры, тема, запуск, роутер, общий layout
   pages/      по странице из ТЗ: model.ts (логика) + ui.tsx (разметка)
-  entities/   session и далее application, room
+  entities/   session, room, application
   shared/     api, forms, routes, theme
 ```
 
@@ -160,6 +160,10 @@ apps/frontend/src/
    которое видит интерфейс. За этим следит конфигурация `scope` в `eslint-plugin-effector`.
 10. В тестах — `createWatch({ unit, scope, fn })`, а не `.watch`: подписка должна быть
     привязана к scope.
+11. **Переходы состояния — через `sample`, а не `.on`.** Однородность важнее краткости:
+    когда все связи выглядят одинаково, модель читается как список правил, а не как смесь
+    цепочек и операторов. `.reset` остаётся — это отдельный понятный примитив.
+12. **`PropsWithChildren` вместо `children: ReactNode`** в пропсах компонентов.
 
 Роутер — **`@effector/router`**, не `atomic-router`: второе — прежнее имя библиотеки,
 в npm по запросу «effector router» находится именно оно, и API там другой. Офлайн-копия
@@ -203,7 +207,7 @@ UI строится **только на Mantine**. Документация ве
 4. **Формы — `@mantine/form`.** Ошибки валидации выводятся на самой форме: это дословное
    требование Задания 2, п. 1–2. Правила берутся из `packages/shared/src/validation.ts`,
    а не пишутся заново в компоненте.
-5. **Тема — через `createTheme` в `apps/frontend/src/theme.ts`.** Цвета, шрифты и размеры
+5. **Тема — через `createTheme` в `apps/frontend/src/shared/theme/theme.ts`.** Цвета, шрифты и размеры
    берутся из руководства по стилю заказчика (`docs/design/`), а не подбираются на глаз:
    это критерий «соответствие корпоративному стилю заказчика», 11 баллов.
 6. **Точки разрыва — значения Mantine по умолчанию.** Менять их можно только в рамках
@@ -228,13 +232,14 @@ pnpm format           # Prettier с автофиксом
 pnpm db:up            # PostgreSQL в docker compose
 pnpm db:reset          # пересоздать БД с нуля
 pnpm mantine:docs     # обновить вендорённую документацию Mantine
+pnpm images           # пересобрать изображения из assets/source
 
 pnpm --filter @kim/backend db:migrate            # применить миграции
 pnpm --filter @kim/backend db:migrate:generate src/database/migrations/Name
 pnpm --filter @kim/backend db:seed               # справочник помещений
 pnpm --filter @kim/backend db:schema:log         # база совпадает с кодом?
 pnpm --filter @kim/backend api:spec              # выгрузить контракт API
-pnpm test                                        # тесты (node --test по dist-test)
+pnpm test                                        # тесты: vitest на фронте, node --test на бэке
 pnpm router:docs                                 # офлайн-документация роутера
 pnpm e2e                                         # сквозные проверки в браузере
 ```

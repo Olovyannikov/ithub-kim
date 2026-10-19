@@ -29,6 +29,7 @@ export function AdminPage() {
     filters,
     page,
     pageCount,
+    hasFilters,
     updatingId,
     roomOptions,
     changeFilters,
@@ -36,13 +37,6 @@ export function AdminPage() {
     changePage,
     changeStatus,
   } = useUnit(AdminPageModel.viewModel);
-
-  const hasFilters =
-    filters.status !== null ||
-    filters.roomId !== null ||
-    filters.author !== '' ||
-    filters.from !== '' ||
-    filters.to !== '';
 
   return (
     <Stack gap="lg">
@@ -152,6 +146,7 @@ export function AdminPage() {
                 application={application}
                 withAuthor
                 eagerImage={index === 0}
+                interactive
                 actions={
                   // Задание 1, п. 5: администратор меняет статус на
                   // «Мероприятие назначено» или «Завершено». Статус «Новая»

@@ -7,6 +7,7 @@ import { AppRouter } from './router';
 
 import '@mantine/core/styles.css';
 import '../shared/theme/fonts.css';
+import '../shared/theme/motion.css';
 
 /**
  * Провайдеры приложения. Scope создаётся до рендера (см. `app/scope.ts`),

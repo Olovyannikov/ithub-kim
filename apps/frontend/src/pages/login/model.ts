@@ -19,9 +19,16 @@ export const LoginPageModel = createModel(() => {
   const formSubmitted = createEvent<LoginValues>();
 
   /** Ошибки сервера, уже разложенные по полям и общему сообщению. */
-  const $serverErrors = createStore(NO_SERVER_ERRORS)
-    .on(SessionModel.loginFx.failData, (_, error) => parseServerError(error))
-    .reset(formSubmitted, SessionModel.loginFx.done);
+  const $serverErrors = createStore(NO_SERVER_ERRORS).reset(
+    formSubmitted,
+    SessionModel.loginFx.done,
+  );
+
+  sample({
+    clock: SessionModel.loginFx.failData,
+    fn: parseServerError,
+    target: $serverErrors,
+  });
 
   sample({ clock: formSubmitted, target: SessionModel.loginFx });
 

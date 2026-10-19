@@ -1,0 +1,74 @@
+/*
+ * Микроанимации (Задание 3: «Предусмотрите анимацию, микроанимации в
+ * приложении для улучшения пользовательского опыта»).
+ *
+ * Правило, которого держимся: анимация объясняет изменение, а не развлекает.
+ * Карточка приподнимается — значит на неё можно нажать. Список проявляется —
+ * значит данные приехали. Длительности короткие: по анализу ЦА это рабочий
+ * инструмент, и ждать окончания анимации человек не должен (ADR-0008).
+ *
+ * Всё отключается, если в системе включено «уменьшить движение»: для части
+ * людей анимации вызывают физический дискомфорт, и это не вопрос вкуса.
+ */
+
+:root {
+  --kim-motion-fast: 120ms;
+  --kim-motion-base: 200ms;
+  --kim-easing: cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@keyframes kim-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/** Появление карточки в списке. */
+.kim-appear {
+  animation: kim-fade-up var(--kim-motion-base) var(--kim-easing) both;
+}
+
+/** Небольшая задержка по порядку — список «раскрывается», а не мигает целиком. */
+.kim-appear:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.kim-appear:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.kim-appear:nth-child(n + 4) {
+  animation-delay: 120ms;
+}
+
+/** Карточка, по которой можно действовать, отзывается на наведение. */
+.kim-interactive {
+  transition:
+    transform var(--kim-motion-fast) var(--kim-easing),
+    box-shadow var(--kim-motion-fast) var(--kim-easing),
+    border-color var(--kim-motion-fast) var(--kim-easing);
+}
+
+.kim-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mantine-shadow-md);
+  border-color: var(--mantine-color-brand-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kim-appear,
+  .kim-interactive {
+    animation: none;
+    transition: none;
+  }
+
+  .kim-interactive:hover {
+    transform: none;
+  }
+}

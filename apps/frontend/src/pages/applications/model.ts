@@ -23,14 +23,16 @@ export interface ReviewValues {
 export const ApplicationsPageModel = createModel(() => {
   const fetchApplicationsFx = createEffect(applicationsApi.mine);
 
-  const $applications = createStore<ApplicationDto[]>([]).on(
-    fetchApplicationsFx.doneData,
-    (_, items) => items,
-  );
+  const $applications = createStore<ApplicationDto[]>([]);
+  const $loadError = createStore<string | null>(null).reset(fetchApplicationsFx);
 
-  const $loadError = createStore<string | null>(null)
-    .on(fetchApplicationsFx.failData, (_, error) => parseServerError(error).message)
-    .reset(fetchApplicationsFx);
+  sample({ clock: fetchApplicationsFx.doneData, target: $applications });
+
+  sample({
+    clock: fetchApplicationsFx.failData,
+    fn: (error) => parseServerError(error).message,
+    target: $loadError,
+  });
 
   sample({ clock: routes.applications.opened, target: fetchApplicationsFx });
 
@@ -41,18 +43,18 @@ export const ApplicationsPageModel = createModel(() => {
   const reviewFormClosed = createEvent();
   const reviewSubmitted = createEvent<ReviewValues>();
 
-  const $reviewingId = createStore<number | null>(null)
-    .on(reviewFormOpened, (_, id) => id)
-    .reset(reviewFormClosed);
+  const $reviewingId = createStore<number | null>(null).reset(reviewFormClosed);
+
+  sample({ clock: reviewFormOpened, target: $reviewingId });
 
   const addReviewFx = createEffect(
     ({ applicationId, values }: { applicationId: number; values: ReviewValues }) =>
       applicationsApi.addReview(applicationId, values),
   );
 
-  const $reviewErrors = createStore(NO_SERVER_ERRORS)
-    .on(addReviewFx.failData, (_, error) => parseServerError(error))
-    .reset(reviewFormOpened, reviewSubmitted);
+  const $reviewErrors = createStore(NO_SERVER_ERRORS).reset(reviewFormOpened, reviewSubmitted);
+
+  sample({ clock: addReviewFx.failData, fn: parseServerError, target: $reviewErrors });
 
   sample({
     clock: reviewSubmitted,
@@ -68,9 +70,12 @@ export const ApplicationsPageModel = createModel(() => {
    * Сохранённый отзыв заменяет заявку в списке, а не вызывает перезагрузку
    * страницы: сервер уже вернул обновлённую заявку.
    */
-  $applications.on(addReviewFx.doneData, (items, updated) =>
-    items.map((item) => (item.id === updated.id ? updated : item)),
-  );
+  sample({
+    clock: addReviewFx.doneData,
+    source: $applications,
+    fn: (items, updated) => items.map((item) => (item.id === updated.id ? updated : item)),
+    target: $applications,
+  });
 
   sample({ clock: addReviewFx.done, target: reviewFormClosed });
 

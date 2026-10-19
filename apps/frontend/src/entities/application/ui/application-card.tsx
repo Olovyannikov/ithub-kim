@@ -8,7 +8,7 @@ import {
   IconStarFilled,
   IconUser,
 } from '@tabler/icons-react';
-import type { ReactNode } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 
 import { formatDateTime } from '../../../shared/lib';
 import { RoomImage } from '../../../shared/ui';
@@ -16,6 +16,8 @@ import { StatusBadge } from './status-badge';
 
 interface ApplicationCardProps {
   application: ApplicationDto;
+  /** Карточка реагирует на наведение, если по ней есть действие. */
+  interactive?: boolean;
   /** Действия над заявкой: отзыв у пользователя, смена статуса у администратора. */
   actions?: ReactNode;
   /** Показывать автора — нужно только в панели администратора. */
@@ -28,11 +30,7 @@ function Field({
   icon: Icon,
   label,
   children,
-}: {
-  icon: typeof IconUser;
-  label: string;
-  children: ReactNode;
-}) {
+}: PropsWithChildren<{ icon: typeof IconUser; label: string }>) {
   return (
     <Group gap={8} wrap="nowrap" align="flex-start">
       <Icon size={16} stroke={1.8} style={{ marginTop: 2, flexShrink: 0, opacity: 0.55 }} />
@@ -59,9 +57,18 @@ export function ApplicationCard({
   actions,
   withAuthor,
   eagerImage,
+  interactive,
 }: ApplicationCardProps) {
   return (
-    <Card withBorder padding="lg" bg="white" radius="md">
+    <Card
+      withBorder
+      padding="lg"
+      bg="white"
+      radius="md"
+      // Появление объясняет, что данные приехали; отклик на наведение —
+      // что с карточкой можно работать (ADR-0009).
+      className={['kim-appear', interactive ? 'kim-interactive' : ''].filter(Boolean).join(' ')}
+    >
       <Grid gap="lg">
         <Grid.Col span={{ base: 12, sm: 5, md: 4 }}>
           <RoomImage

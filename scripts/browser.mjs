@@ -335,6 +335,17 @@ export async function openPage(browser) {
      * записать в input, компонент его не примет.
      */
     async selectByLabel(label, optionText) {
+      // Ждём не просто появления поля, а готовности: пока грузится справочник,
+      // список отключён, и щелчок по нему ничего не открывает.
+      await this.waitUntil(`(() => {
+        const label = Array.from(document.querySelectorAll('label')).find(
+          (l) => l.textContent.replace(/\\s*\\*$/, '').trim() === ${JSON.stringify(label)},
+        );
+        if (!label) return false;
+        const input = document.getElementById(label.getAttribute('for'));
+        return Boolean(input) && !input.disabled;
+      })()`);
+
       const opened = await this.evaluate(`(() => {
         const labels = Array.from(document.querySelectorAll('label'));
         const target = labels.find((l) => l.textContent.replace(/\\s*\\*$/, '').trim() === ${JSON.stringify(label)});
@@ -351,7 +362,11 @@ export async function openPage(browser) {
         throw new Error(`Не найден список с подписью «${label}»`);
       }
 
-      await sleep(250);
+      // Ждём, пока список раскроется: фиксированная пауза подводила, как
+      // только страница стала загружаться отдельной частью сборки.
+      await this.waitUntil(`Array.from(document.querySelectorAll('[role="option"]')).filter(
+        (o) => o.getClientRects().length > 0,
+      ).length > 0`);
 
       const picked = await this.evaluate(`(() => {
         // Mantine держит в DOM варианты всех списков сразу, поэтому ищем
@@ -393,7 +408,9 @@ export async function openPage(browser) {
         throw new Error(`Не найден список с placeholder «${placeholder}»`);
       }
 
-      await sleep(250);
+      await this.waitUntil(`Array.from(document.querySelectorAll('[role="option"]')).filter(
+        (o) => o.getClientRects().length > 0,
+      ).length > 0`);
 
       const picked = await this.evaluate(`(() => {
         const options = Array.from(document.querySelectorAll('[role="option"]'))

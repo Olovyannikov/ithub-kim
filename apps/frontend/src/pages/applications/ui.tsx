@@ -99,6 +99,7 @@ export function ApplicationsPage() {
                 key={application.id}
                 application={application}
                 eagerImage={index === 0}
+                interactive
                 actions={
                   // Право на отзыв считает сервер: Задание 2, п. 3 — только
                   // после завершения мероприятия.

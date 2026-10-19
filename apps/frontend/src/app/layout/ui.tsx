@@ -14,7 +14,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { IconCalendarPlus, IconListDetails, IconLogout, IconShieldCog } from '@tabler/icons-react';
 import { useUnit } from 'effector-react';
-import type { ReactNode } from 'react';
+import type { PropsWithChildren } from 'react';
 
 import { SessionModel } from '../../entities/session';
 import { routes } from '../../shared/routes';
@@ -31,7 +31,7 @@ const SOCIAL = [
  * Навигация на узком экране сворачивается в выдвижное меню — пользовательская
  * часть проектируется от макета 390×844 (ADR-0008).
  */
-export function Layout({ children }: { children: ReactNode }) {
+export function Layout({ children }: PropsWithChildren) {
   const { user, isAuthenticated, isAdmin, logout } = useUnit(SessionModel.viewModel);
   const { openApplications, openCreate, openAdmin } = useUnit({
     openApplications: routes.applications.open,

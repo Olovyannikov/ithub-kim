@@ -4,6 +4,8 @@ import { createBrowserHistory } from 'history';
 
 import { router } from '../shared/routes';
 import { appStarted } from './bootstrap';
+// Подключает модели страниц до того, как приедет их разметка — см. models.ts.
+import './models';
 
 /**
  * Приложение работает в изолированном Scope (ADR-0006).

@@ -32,13 +32,17 @@ export const SessionModel = createModel(() => {
   const registerFx = createEffect(authApi.register);
   const logoutFx = createEffect(authApi.logout);
 
-  const $user = createStore<UserDto | null>(null)
-    .on(fetchSessionFx.doneData, (_, user) => user)
-    .on([loginFx.doneData, registerFx.doneData], (_, user) => user)
-    .reset(logoutFx.done, sessionExpired);
+  const $user = createStore<UserDto | null>(null).reset(logoutFx.done, sessionExpired);
 
   /** Проверка сессии ещё не завершалась — приложение не знает, вошёл ли пользователь. */
-  const $sessionChecked = createStore(false).on(fetchSessionFx.finally, () => true);
+  const $sessionChecked = createStore(false);
+
+  sample({
+    clock: [fetchSessionFx.doneData, loginFx.doneData, registerFx.doneData],
+    target: $user,
+  });
+
+  sample({ clock: fetchSessionFx.finally, fn: () => true, target: $sessionChecked });
 
   const $isAuthenticated = $user.map((user) => user !== null);
   const $isAdmin = $user.map((user) => user?.role === 'admin');

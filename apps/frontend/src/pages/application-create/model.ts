@@ -4,6 +4,7 @@ import { createEffect, createEvent, createStore, sample } from 'effector';
 import { RoomsModel } from '../../entities/room';
 import { applicationsApi } from '../../shared/api';
 import { NO_SERVER_ERRORS, parseServerError } from '../../shared/forms';
+import { toDateTimeLocalValue } from '../../shared/lib';
 import { createModel } from '../../shared/lib/effector';
 import { routes } from '../../shared/routes';
 
@@ -30,12 +31,25 @@ export const ApplicationCreatePageModel = createModel(() => {
       applicationsApi.create(values),
   );
 
-  const $serverErrors = createStore(NO_SERVER_ERRORS)
-    .on(createApplicationFx.failData, (_, error) => parseServerError(error))
-    .reset(formSubmitted);
+  const $serverErrors = createStore(NO_SERVER_ERRORS).reset(formSubmitted);
+
+  sample({ clock: createApplicationFx.failData, fn: parseServerError, target: $serverErrors });
 
   /** Справочник помещений подгружается по открытию страницы. */
   sample({ clock: routes.applicationCreate.opened, target: RoomsModel.roomsRequested });
+
+  /**
+   * Нижняя граница для поля даты. Пересчитывается при каждом открытии
+   * страницы: вычислять «сейчас» в разметке нельзя — это правило из ТЗ
+   * («дата не в прошлом»), и на сервере проверяется то же самое.
+   */
+  const $minStartsAt = createStore(toDateTimeLocalValue(new Date()));
+
+  sample({
+    clock: routes.applicationCreate.opened,
+    fn: () => toDateTimeLocalValue(new Date()),
+    target: $minStartsAt,
+  });
 
   sample({
     clock: formSubmitted,
@@ -60,6 +74,7 @@ export const ApplicationCreatePageModel = createModel(() => {
     viewModel: {
       roomOptions: RoomsModel.viewModel.roomOptions,
       roomsPending: RoomsModel.viewModel.roomsPending,
+      minStartsAt: $minStartsAt,
       pending: createApplicationFx.pending,
       serverErrors: $serverErrors,
       submit: formSubmitted,

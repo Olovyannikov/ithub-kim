@@ -17,9 +17,16 @@ export interface RegisterValues {
 export const RegisterPageModel = createModel(() => {
   const formSubmitted = createEvent<RegisterValues>();
 
-  const $serverErrors = createStore(NO_SERVER_ERRORS)
-    .on(SessionModel.registerFx.failData, (_, error) => parseServerError(error))
-    .reset(formSubmitted, SessionModel.registerFx.done);
+  const $serverErrors = createStore(NO_SERVER_ERRORS).reset(
+    formSubmitted,
+    SessionModel.registerFx.done,
+  );
+
+  sample({
+    clock: SessionModel.registerFx.failData,
+    fn: parseServerError,
+    target: $serverErrors,
+  });
 
   sample({ clock: formSubmitted, target: SessionModel.registerFx });
 
