@@ -70,6 +70,18 @@ createAction({
     openApplications: routes.applications.open,
   },
   fn: (target, source) => {
+    /*
+      Все переводы ниже — с заменой записи в истории, а не добавлением.
+
+      Редирект охранника не был переходом, который совершил пользователь, —
+      это исправление адреса, на который его пускать нельзя. Оставаясь в
+      истории, такая запись превращает кнопку «назад» в ловушку: гость
+      открывает `/applications`, его уводит на `/login`, он жмёт «назад» —
+      и снова оказывается на `/login`, потому что охранник срабатывает
+      опять. Выйти назад из приложения становится невозможно совсем.
+    */
+    const replace = { replace: true } as const;
+
     // Пока неизвестно, вошёл ли пользователь, никуда не переводим.
     if (!source.sessionChecked) {
       return;
@@ -77,7 +89,7 @@ createAction({
 
     if (!source.authenticated) {
       if (source.protectedOpen) {
-        target.openLogin();
+        target.openLogin(replace);
       }
 
       return;
@@ -86,14 +98,14 @@ createAction({
     // Вошедшему на страницах входа и регистрации делать нечего, а корень —
     // это и есть список заявок, отдельной страницы у него нет.
     if (source.guestOpen || source.homeOpen) {
-      target.openApplications();
+      target.openApplications(replace);
 
       return;
     }
 
     // Панель администратора — только для роли admin.
     if (source.adminOpen && !source.admin) {
-      target.openApplications();
+      target.openApplications(replace);
     }
   },
 });
